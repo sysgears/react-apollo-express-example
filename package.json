@@ -1,0 +1,19 @@
+{
+  "name": "react-apollo-express-example",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/sergei-gilevich/react-apollo-express-example.git"
+  },
+  "author": "Sergei Gilevich",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/sergei-gilevich/react-apollo-express-example/issues"
+  },
+  "homepage": "https://github.com/sergei-gilevich/react-apollo-express-example#readme"
+}
