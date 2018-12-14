@@ -2,9 +2,9 @@ import React, { Component } from 'react'
 
 import { ApolloProvider } from 'react-apollo';
 
-import apolloClient from '../settings/createApolloClient';
+import apolloClient from './settings/createApolloClient';
 
-import Posts from './Posts';
+import { Posts } from './modules';
 
 
 class App extends Component {
