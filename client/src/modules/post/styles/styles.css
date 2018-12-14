@@ -1,0 +1,13 @@
+.posts-container {
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.posts-title {
+  text-align: center;
+  margin-bottom: 25px;
+}
+
+.card-body {
+  margin-bottom: 20px;
+}
