@@ -6,7 +6,7 @@ const GET_POST = gql`
   {
     posts {
       title
-      authorName
+      content
     }
   }
 `;
