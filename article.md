@@ -195,8 +195,69 @@ npm install react react-dom --save
 npm install reactstrap bootstrap --save
 ```
 
-После этого устанавливаем зависимоста для `Apollo client`.
+После этого устанавливаем зависимости для `Apollo client`.
 
 ```bash
 npm install apollo-boost react-apollo --save
+```
+
+### Initialize client
+
+После установки всех зависимостей приступим к разработке нашего React клиента.
+
+Для начала в корне проекта создаем папку `client` и в ней папку `src`. Далее создадим папку в которой в будующем будем хранить конфигурационные файлы и назовем её `settings`. После этого создаем папку `modules`. Эта папка будет содержать модули вашего приложения такие как: `user, products, auth and etc.`. В нашем примере мы создадим модуль `posts`.
+
+В папке `src` создаем файл `index.html` и добавляем туда следующий код
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>React Apollo Express Example</title>
+  </head>
+
+  <body>
+    <section id="root"></section>
+  </body>
+
+</html>
+```
+
+Теперь создаем файл `App.js` в котором будет инициализироваться `Apollo client`. Так же, в дальнейшем, вы можете добавить в этот файл роутинг.
+
+На данном этапе мы выведем в этом файле Hello world! Добавьте следующий код в файл `App.js`.
+
+```javascript
+import React, { Component } from 'react'
+
+class App extends Component {
+  render() {
+    return (
+      <div>Hello world!</div>
+    )
+  }
+}
+
+export default App;
+```
+
+Теперь создадим файл, который будет точкой входа в наше клиентское веб приложение.
+В папке `client` создадим файл `index.js` и добавим туда этот код
+
+```javascript
+import React from "react";
+import ReactDOM from "react-dom";
+import App from './App';
+
+ReactDOM.render(<App />, document.getElementById("root"));
+```
+
+Теперь нам нужно создать команду которая будет запускать клиентское приложение. Для этого добавляем следующую команду в раздел `scripts` в файле `package.json`
+
+```json
+"client": "webpack-dev-server --mode development --open"
 ```
