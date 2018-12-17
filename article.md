@@ -17,7 +17,7 @@ npm init
 После инициализации нашего приложения нам необходимо установить зависимости для создания сервера.
 
 ```bash
-npm i express apollo-server-express graphql --save
+npm install express apollo-server-express graphql --save
 ```
 
 ### 1.3 Create graphql schema for the Posts module
@@ -114,4 +114,89 @@ npm install nodemon -g
 
 ```json
 "server": "nodemon ./server/server.js"
+```
+
+## Step 2. Create client using React and Apollo client
+
+### 2.1 Install client dependencies for configuring webpack
+
+Для начала нам нужно установить зависимости для того, что бы настроить `webpack` для клиентской стороны.
+
+```bash
+npm install webpack webpack-cli webpack-dev-server html-webpack-plugin css-loader style-loader --save-dev
+```
+
+### 2.2 Configure webpack
+
+Создаем в корне проекта файл `webpack.config.js` и добавляем туда следующий код
+
+```javascript
+const HtmlWebPackPlugin = require("html-webpack-plugin");
+const path = require('path');
+
+const htmlPlugin = new HtmlWebPackPlugin({
+  template: "./client/src/index.html",
+  filename: "./index.html"
+});
+
+module.exports = {
+  entry: './client/src',
+  module: {
+    rules: [
+      {
+        test: /\.js$/,
+        exclude: /node_modules/,
+        use: {
+          loader: "babel-loader"
+        }
+      },
+      {
+        test: /\.css$/,
+        use: ["style-loader", "css-loader"]
+      }
+    ]
+  },
+  plugins: [htmlPlugin]
+};
+```
+
+### 2.3 Install babel dependencies
+
+Добавляем зависимости для дальнейшей конфигурации `babel`.
+
+```bash
+npm install babel-core babel-loader babel-preset-env babel-preset-react --save-dev
+```
+
+### 2.4 Babel configuration
+
+Создаем в корне проекта файл `.babelrc` и добавляем следующий код
+
+```
+{
+  "presets": [
+    "env",
+    "react"
+  ]
+}
+```
+
+### 2.5 Install dependencies for React
+
+Устанавливаем следующие зависимости для клиентской стороны
+
+```bash
+npm install react react-dom --save
+```
+
+Так же нам я решил установить UI toolkit для приложения. Я выбрал `reactstrap`, но вы можете выбрать любой более подходящий для вас. Устанавливаем пакеты `reactstrap` и `bootstrap`.
+
+```bash
+npm install reactstrap bootstrap --save
+```
+
+После этого устанавливаем зависимоста для `Apollo client`.
+
+```bash
+npm install apollo-boost react-apollo --save
 ```
