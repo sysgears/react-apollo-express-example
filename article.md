@@ -80,7 +80,7 @@ module.exports = resolvers;
 
 ### 1.5 Server setup
 
-Саздаем 
+Саздаем файл `server.js` и добавляем в него код для запуска сервера. Так же мы подключаем `graphql schema` и `resolvers` в наш файл и передаем их в `ApolloServer`
 
 ```javascript
 const express = require('express');
@@ -101,4 +101,17 @@ server.applyMiddleware({ app });
 app.listen({ port: 3000 }, () =>
   console.log(`🚀 Server ready at http://localhost:3000${server.graphqlPath}`)
 );
+```
+### 1.6 Create command for starting sever
+
+В первую очередь, мы должы установить следующий пакет для горячей перезагрузки серверного кода. Эта зависимость должа быть установленна глобально
+
+```bash
+npm install nodemon -g
+```
+
+После установки `nodemon` добавляем следующий код в секцию `scripts` в файле `package.json`.
+
+```json
+"server": "nodemon ./server/server.js"
 ```
