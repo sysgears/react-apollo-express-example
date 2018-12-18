@@ -201,7 +201,7 @@ npm install reactstrap bootstrap --save
 npm install apollo-boost react-apollo --save
 ```
 
-### Initialize client
+### 2.6 Initialize React client
 
 После установки всех зависимостей приступим к разработке нашего React клиента.
 
@@ -260,4 +260,52 @@ ReactDOM.render(<App />, document.getElementById("root"));
 
 ```json
 "client": "webpack-dev-server --mode development --open"
+```
+
+### 2.7 Initialize Apollo client
+
+Теперь нам нужно создать `Apollo client`. Для этого в папке `settings` создадим файл `createApolloClient.js` и добавим туда код для создания `Apollo client`.
+
+```javascript
+import ApolloClient from "apollo-boost";
+
+const client = new ApolloClient({
+  uri: "http://localhost:3000/graphql"
+});
+
+export default client;
+```
+
+Теперь нам нужно добавить `ApolloProvider` и передать в него наш `ApolloClient`.
+В первую очередь нам нужно импортировать `ApolloClient` и `ApolloProvider` в файле `App.js`.
+
+```javascript
+import { ApolloProvider } from 'react-apollo';
+
+import apolloClient from './settings/createApolloClient';
+```
+
+Теперь нам нужно обернуть наше приложение в `ApolloProvider` что бы иметь достпук к данным `AppoloClient`.
+
+После этого файл `App.js` должен содержать следующий код.
+
+```javascript
+import React, { Component } from 'react'
+
+import { ApolloProvider } from 'react-apollo';
+
+import apolloClient from './settings/createApolloClient';
+
+
+class App extends Component {
+  render() {
+    return (
+      <ApolloProvider client={apolloClient}>
+        Hello world!
+      </ApolloProvider>
+    )
+  }
+}
+
+export default App;
 ```
