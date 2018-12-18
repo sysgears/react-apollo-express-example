@@ -2,7 +2,7 @@ import React from 'react';
 import gql from "graphql-tag";
 import { Query } from "react-apollo";
 
-const GET_POST = gql`
+const GET_POSTS = gql`
   {
     posts {
       title
@@ -13,7 +13,7 @@ const GET_POST = gql`
 
 const withPosts = Component => props => {
   return (
-    <Query query={GET_POST}>
+    <Query query={GET_POSTS}>
       {({ loading, data }) => {
         return (
           <Component postsLoading={loading} posts={data && data.posts} {...props} />
