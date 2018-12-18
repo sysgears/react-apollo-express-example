@@ -22,10 +22,12 @@ class Posts extends Component {
             );
           }) : <div>Loading...</div>
         }
-        
       </div>
     )
   }
 }
 
+/* Wrapp Posts component using withPosts provider
+* for getting posts list in the Posts component
+*/
 export default withPosts(Posts);
