@@ -27,7 +27,7 @@ class Posts extends Component {
   }
 }
 
-/* Wrapp Posts component using withPosts provider
+/* Wrap Posts component using withPosts provider
 * for getting posts list in the Posts component
 */
 export default withPosts(Posts);
