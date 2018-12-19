@@ -309,3 +309,163 @@ class App extends Component {
 
 export default App;
 ```
+
+### 2.8 Implement post module
+
+Следующим шагом для создания нашего приложения будет имплементация модуля постов. В папке `module` создаем папку `posts`. Далее создадим папку `providers` котора будет содержать в себе компоненты высшего порядка, в которых будут выполняться GrahphQL запросы. В папке `providers` создадим файл `PostsList.js`. Этот HOC будет делать запорс для получения списка постов и возвращать результат в дочерний компонент. Добавим следующий код в созданный файл.
+
+```javascript
+import React from 'react';
+import gql from "graphql-tag";
+import { Query } from "react-apollo";
+
+const GET_POST = gql`
+  {
+    posts {
+      title
+      content
+    }
+  }
+`;
+
+const withPosts = Component => props => {
+  return (
+    <Query query={GET_POST}>
+      {({ loading, data }) => {
+        return (
+          <Component postsLoading={loading} posts={data && data.posts} {...props} />
+        );
+      }}
+    </Query>
+  )
+  
+};
+
+export default withPosts;
+```
+
+Поскольку в будующем в этой папке может быть много провайдеров, то создадим `index.js` файл в папке `providers` который будет их всех экспортировать.
+
+```javascript
+export { default as withPosts } from './PostsList';
+```
+
+Следующим шагом создадим в папке `posts` папку `styles` и в ней файл `styles.css`.
+
+```css
+.posts-container {
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.posts-title {
+  text-align: center;
+  margin-bottom: 25px;
+}
+
+.card-body {
+  margin-bottom: 20px;
+}
+```
+
+Эти стили мы подключим к `index` файлу `posts` модуля.
+
+Следующим этапом будет создание компонента для отображения списка постов. Создадим в папке `posts` папку `containers`, а в ней файл `index.js`. В этот файл добавляем следующий код.
+
+```javascript
+import React, { Component } from 'react'
+import { Card, Button, CardTitle, CardText } from 'reactstrap';
+
+import { withPosts } from '../providers';
+
+import '../styles/styles.css';
+
+
+class Posts extends Component {
+  render() {
+    const { posts, postsLoading } = this.props;
+    return (
+      <div className="posts-container">
+        <h2 className="posts-title">Posts</h2>
+        {
+          !postsLoading && posts ? posts.map((post, index) => {
+            return (
+              <Card key={index} body className="text-center">
+                <CardTitle>{post.title}</CardTitle>
+                <CardText>{post.content}</CardText>
+              </Card>
+            );
+          }) : <div>Loading...</div>
+        }
+      </div>
+    )
+  }
+}
+
+/* Wrap Posts component using withPosts provider
+* for getting posts list in the Posts component
+*/
+export default withPosts(Posts);
+```
+
+Теперь нужно подключить `bootstrap` стили в `index.js` файл в папке `src`. Это нужно, что бы список наших постов корректно отображался.
+
+```javascript
+import 'bootstrap/dist/css/bootstrap.min.css';
+```
+
+Далее, мы должны экспортировать наш главный компоент который находится в папке `containers`. Для этого создадим файл `index.js` в папке `posts` и экспортируем компонент `Posts`.
+
+```javascript
+export { default as Posts } from './containers';
+```
+
+По скольку модулей может быть много, мы должны создать `index.js` файл в папке `modules`, что бы экспортировать наши модули.
+
+```javascript
+export { Posts } from './post';
+```
+
+Теперь мы можем подключить наш компонент `Posts` в файл `App.js`. Теперь файл `App.js` должен содержать следующий код.
+
+```javascript
+import React, { Component } from 'react'
+
+import { ApolloProvider } from 'react-apollo';
+
+import apolloClient from './settings/createApolloClient';
+
+import { Posts } from './modules';
+
+
+class App extends Component {
+  render() {
+    return (
+      <ApolloProvider client={apolloClient}>
+        <Posts />
+      </ApolloProvider>
+    )
+  }
+}
+
+export default App;
+```
+
+Теперь мы можем создать одну команду для запуска клиента и сервера.
+В начале добавим пакет для одновременного запуска клиента и сервера.
+
+```bash
+npm install concurrently --save-dev
+```
+
+Теперь создадим общую команду для запуска клиента и сервера в раздел `scripts` в файле `package.json`.
+
+```json
+"dev": "concurrently \"npm run client\" \"npm run server\""
+```
+
+Теперь приложение готово и мы можем его запустить используя команду:
+
+```bash
+npm run dev
+```
