@@ -4,6 +4,7 @@ import PostForm from './PostForm';
 
 import { withPosts } from '../providers';
 import { Container, Row, Col } from 'reactstrap';
+import { PostsList, PostForm } from '../components';
 import '../styles/styles.css';
 
 class PostsRoot extends Component {
@@ -15,7 +16,7 @@ class PostsRoot extends Component {
         <h2 className="posts-title">Posts Component</h2>
         <Row>
           <Col>
-            <PostList postsLoading={postsLoading} posts={posts} />
+            <PostsList postsLoading={postsLoading} posts={posts} />
           </Col>
           <Col>
             <PostForm />

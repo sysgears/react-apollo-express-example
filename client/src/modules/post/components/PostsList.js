@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { Card, CardTitle } from 'reactstrap';
 
-export default class PostList extends Component {
+export default class PostsList extends Component {
   constructor(props) {
     super(props);
 
