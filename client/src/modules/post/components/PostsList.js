@@ -12,9 +12,9 @@ export default class PostsList extends Component {
     const { posts, postsLoading } = this.props;
 
     if (!postsLoading && posts.length > 0) {
-      return posts.map(post => {
+      return posts.map((post, idx) => {
         return (
-          <Card key={post.id} body outline className="post-card">
+          <Card key={idx} body outline className="post-card">
             <CardTitle>{post.title}</CardTitle>
           </Card>
         );
