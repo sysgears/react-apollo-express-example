@@ -1,33 +1,33 @@
 import React, { Component } from 'react'
-import { Card, Button, CardTitle, CardText } from 'reactstrap';
+import PostList from './PostList';
+import PostForm from './PostForm';
 
 import { withPosts } from '../providers';
-
+import { Container, Row, Col } from 'reactstrap';
 import '../styles/styles.css';
 
-
-class Posts extends Component {
+class PostsRoot extends Component {
   render() {
     const { posts, postsLoading } = this.props;
+
     return (
-      <div className="posts-container">
-        <h2 className="posts-title">Posts</h2>
-        {
-          !postsLoading && posts ? posts.map((post, index) => {
-            return (
-              <Card key={index} body className="text-center">
-                <CardTitle>{post.title}</CardTitle>
-                <CardText>{post.content}</CardText>
-              </Card>
-            );
-          }) : <div>Loading...</div>
-        }
-      </div>
+      <Container>
+        <h2 className="posts-title">Posts Component</h2>
+        <Row>
+          <Col>
+            <PostList postsLoading={postsLoading} posts={posts} />
+          </Col>
+          <Col>
+            <PostForm />
+          </Col>
+        </Row>
+      </Container>
     )
   }
 }
 
-/* Wrap Posts component using withPosts provider
-* for getting posts list in the Posts component
-*/
-export default withPosts(Posts);
+/**
+ * Wrap Posts component using withPosts provider
+ * for getting posts list in the Posts component
+ */
+export default withPosts(PostsRoot);

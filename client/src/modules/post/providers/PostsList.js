@@ -1,10 +1,11 @@
 import React from 'react';
-import gql from "graphql-tag";
-import { Query } from "react-apollo";
+import { gql } from 'apollo-boost';
+import { Query } from 'react-apollo';
 
-const GET_POSTS = gql`
+export const GET_POSTS = gql`
   {
     posts {
+      id
       title
       content
     }
@@ -20,8 +21,7 @@ const withPosts = Component => props => {
         );
       }}
     </Query>
-  )
-  
+  );
 };
 
 export default withPosts;

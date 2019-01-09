@@ -1,13 +1,29 @@
-.posts-container {
-  max-width: 480px;
-  margin: 0 auto;
-}
-
-.posts-title {
-  text-align: center;
-  margin-bottom: 25px;
+.container {
+  padding: 25px 15px;
+  background-color: #f4f5f9;
 }
 
 .card-body {
   margin-bottom: 20px;
+}
+
+.post-card {
+  cursor: pointer;
+  color: #880a8e;
+  box-shadow: 1px 2px 3px rgba(136,10,142,0.3);
+}
+
+.post-form {
+  padding: 25px 20px;
+  border: 1px solid rgba(0,0,0,0.125);
+  border-radius: 4px;
+  box-shadow: 1px 2px 3px rgba(136,10,142,0.3);
+}
+
+.post-card:hover, .post-form:hover {
+  box-shadow: 2px 3px 4px rgba(136,10,142,0.5);
+}
+
+.submit-button {
+  background-color: #880a8e !important;
 }

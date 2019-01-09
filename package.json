@@ -4,7 +4,6 @@
   "description": "",
   "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "server": "nodemon ./server/server.js",
     "client": "webpack-dev-server --mode development --open",
     "dev": "concurrently \"npm run client\" \"npm run server\""
@@ -22,9 +21,11 @@
   "dependencies": {
     "apollo-boost": "^0.1.22",
     "apollo-server-express": "^2.2.6",
-    "bootstrap": "^4.1.3",
+    "bootstrap": "^4.2.1",
+    "cors": "^2.8.5",
     "express": "^4.16.4",
     "graphql": "^14.0.2",
+    "mongoose": "^5.4.1",
     "react": "^16.6.3",
     "react-apollo": "^2.3.2",
     "react-dom": "^16.6.3",
@@ -32,13 +33,12 @@
   },
   "devDependencies": {
     "@babel/core": "^7.2.0",
-    "babel-core": "^6.26.3",
-    "babel-loader": "^7.1.5",
-    "babel-preset-env": "^1.7.0",
-    "babel-preset-react": "^6.24.1",
+    "@babel/preset-react": "^7.0.0",
+    "babel-loader": "^8.0.4",
     "concurrently": "^4.1.0",
     "css-loader": "^2.0.0",
     "html-webpack-plugin": "^3.2.0",
+    "nodemon": "^1.18.9",
     "react-dev-utils": "^6.1.1",
     "style-loader": "^0.23.1",
     "webpack": "^4.27.1",
