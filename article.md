@@ -592,14 +592,121 @@ export { default as withPosts } from './PostsList';
 export { default as withAddPost } from './AddPost';
 ```
 
+### Creating a component for rendering posts list
+
+Следующим шагом создаем компонент который будет рендерить список получаемых постов. Для этого в папке `post` создаем новую папку `components`. Эта папка будет служить для хранения более мелких компонентов.
+
+Теперь в папке `components` создаем файл `PostsList.js` и добавляем в него следующий код
+
+```javascript
+import React, { Component } from 'react';
+import { Card, CardTitle } from 'reactstrap';
+
+export default class PostsList extends Component {
+  constructor(props) {
+    super(props);
+
+    this.showPosts = this.showPosts.bind(this);
+  }
+
+  showPosts() {
+    const { posts, postsLoading } = this.props;
+
+    if (!postsLoading && posts.length > 0) {
+      return posts.map((post, idx) => {
+        return (
+          <Card key={idx} body outline className="post-card">
+            <CardTitle>{post.title}</CardTitle>
+          </Card>
+        );
+      });
+    } else {
+      return (
+        <div>
+          <h2>No posts available</h2>
+          <p>Use the form on the right to create a new post</p>
+        </div>
+      );
+    }
+  }
+
+  render() {
+    return (
+      <div className="posts-container">
+        {this.showPosts()}
+      </div>
+    );
+  }
+}
+
+```
+
+###Creating a component which provides form for adding new post
+
+Теперь в папке `components` создаем файл `PostForm.js` со следующим кодом
+
+```javascript
+import React, { Component } from 'react';
+
+import { Form, FormGroup, Label, Input, Button } from 'reactstrap';
+import { withAddPost } from '../providers';
+
+class PostForm extends Component {
+  constructor(props) {
+    super(props);
+    this.submitForm = this.submitForm.bind(this);
+  }
+
+  submitForm(event) {
+    event.preventDefault();
+
+    this.props.addPost({
+      title: event.target.title.value,
+      content: event.target.content.value
+    });
+  }
+
+  render() {
+    return (
+      <div className="post-form">
+        <h2>Create new post</h2>
+        <Form onSubmit={(event) => this.submitForm(event)}>
+          <FormGroup>
+            <Label for="postTitle">Post Title</Label>
+            <Input type="text" name="title" id="postTitle" placeholder="Add a title" />
+          </FormGroup>
+          <FormGroup>
+            <Label for="postContent">Post Content</Label>
+            <Input type="textarea" name="content" id="postContent" placeholder="Describe your post" />
+          </FormGroup>
+          <Button className="submit-button">Submit new post</Button>
+        </Form>
+      </div>
+    )
+  }
+}
+
+export default withAddPost(PostForm);
+
+```
+
+### Exporting new components
+
+После создания новых компонентов нам нужно их экспортировать для дальнейшего использования. Для этого в папке `components` создаем файл `index.js` в котором экспортируем наши компоненты.
+
+```javascript
+export { default as PostForm } from './PostForm';
+export { default as PostsList } from './PostsList';
+```
+
 ### Creating a container component for rendering posts
 Now that we can query the server and get posts, we need to add a container to render the retrieved posts. Create the `PostList` component under the `client/src/modules/posts/containers` directory with the following code:
 ```javascript
 import React, { Component } from 'react'
-import PostList from './PostList';
 
 import { withPosts } from '../providers';
 import { Container, Row, Col } from 'reactstrap';
+import { PostsList, PostForm } from '../components';
 import '../styles/styles.css';
 
 class PostsRoot extends Component {
@@ -611,7 +718,7 @@ class PostsRoot extends Component {
         <h2 className="posts-title">Posts Component</h2>
         <Row>
           <Col>
-            <PostList postsLoading={postsLoading} posts={posts} />
+            <PostsList postsLoading={postsLoading} posts={posts} />
           </Col>
           <Col>
             <PostForm />
@@ -623,10 +730,11 @@ class PostsRoot extends Component {
 }
 
 /**
- * Wrap the Posts component using withPosts provider
- * for getting posts list in the Posts component.
+ * Wrap Posts component using withPosts provider
+ * for getting posts list in the Posts component
  */
 export default withPosts(PostsRoot);
+
 ```
 Next, we need to export our main component that’s located under the `containers` directory. We need to create the `index.js` file under `posts` and export the `Posts` component.
 ```javascript
