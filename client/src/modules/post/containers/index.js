@@ -1,6 +1,4 @@
 import React, { Component } from 'react'
-import PostList from './PostList';
-import PostForm from './PostForm';
 
 import { withPosts } from '../providers';
 import { Container, Row, Col } from 'reactstrap';
