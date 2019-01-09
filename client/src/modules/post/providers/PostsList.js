@@ -5,7 +5,6 @@ import { Query } from 'react-apollo';
 export const GET_POSTS = gql`
   {
     posts {
-      id
       title
       content
     }
