@@ -545,6 +545,53 @@ Note that you can have many providers in the future, and so it’s best to creat
 ```javascript
 export { default as withPosts } from './PostsList';
 ```
+
+### Creating AddPost High Order Component
+
+Далее нам нужно создать компонент высшего порядка. Этот компонент будет выполнять мутацию, которая запишет новый пост в список и перезагрузит список постов на клиентской части. Для этого в папке `providers` мы создаем файл `AddPost.js` и добавляем туда следующий код.
+
+```javascript
+import React from 'react';
+import { gql } from 'apollo-boost';
+import { Mutation } from 'react-apollo';
+import { GET_POSTS } from "./PostsList";
+
+export const ADD_POST = gql`
+  mutation($title: String!, $content: String!) {
+    addPost(title: $title, content: $content) {
+      title
+      content
+    }
+  }
+`;
+
+const withAddPost = Component => props => {
+  return (
+    <Mutation mutation={ADD_POST}>
+      {addPost => {
+        return (
+          <Component addPost={({ title, content }) => addPost({
+            variables: { title, content }, refetchQueries: [
+              { query: GET_POSTS }
+            ] })}
+          />
+        )
+      }}
+    </Mutation>
+  );
+};
+
+export default withAddPost;
+
+```
+
+Теперь экспортируем новый провайдер из файла `index.js` который находится в папке `providers`.
+
+```javascript
+export { default as withPosts } from './PostsList';
+export { default as withAddPost } from './AddPost';
+```
+
 ### Creating a container component for rendering posts
 Now that we can query the server and get posts, we need to add a container to render the retrieved posts. Create the `PostList` component under the `client/src/modules/posts/containers` directory with the following code:
 ```javascript
