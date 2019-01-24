@@ -18,6 +18,7 @@ export default class PostsRoot extends Component {
     return (
       <Container>
         <h2 className="posts-title">Posts Module</h2>
+        <hr />
         <Row>
           <Col>
             <PostsList postsLoading={postsLoading} posts={posts} />
