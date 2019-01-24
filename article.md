@@ -360,7 +360,7 @@ yarn add webpack webpack-cli webpack-dev-server html-webpack-plugin css-loader s
 ```
 Besides the webpack dependencies, it’s also necessary to install two Babel dependencies that are required by `babel-loader` to transpile React code into JavaScript:
 ```bash
-yarn add @babel/core @babel/preset-react
+yarn add @babel/core @babel/preset-react @babel/plugin-proposal-decorators
 ```
 After installing all the dependencies, we can configure webpack.
 ### Configuring webpack for a React application
@@ -381,7 +381,10 @@ module.exports = {
         use: {
           loader: 'babel-loader',
           options: {
-            presets: ['@babel/preset-react']
+            presets: ['@babel/preset-react'],
+            plugins: [
+              ["@babel/plugin-proposal-decorators", { "legacy": true }],
+            ]
           }
         }
 
@@ -651,7 +654,8 @@ import React, { Component } from 'react';
 import { Form, FormGroup, Label, Input, Button } from 'reactstrap';
 import { withAddPost } from '../providers';
 
-class PostForm extends Component {
+@withAddPost
+export default class PostForm extends Component {
   constructor(props) {
     super(props);
     this.submitForm = this.submitForm.bind(this);
@@ -686,8 +690,6 @@ class PostForm extends Component {
   }
 }
 
-export default withAddPost(PostForm);
-
 ```
 
 ### Exporting new components
@@ -710,13 +712,18 @@ import { PostsList, PostForm } from '../components';
 
 import '../styles/styles.css';
 
-class PostsRoot extends Component {
+/**
+ * Wrap Posts component using withPosts provider
+ * for getting posts list in the Posts component
+ */
+@withPosts
+export default class PostsRoot extends Component {
   render() {
     const { posts, postsLoading } = this.props;
 
     return (
       <Container>
-        <h2 className="posts-title">Posts Component</h2>
+        <h2 className="posts-title">Posts Module</h2>
         <Row>
           <Col>
             <PostsList postsLoading={postsLoading} posts={posts} />
@@ -729,12 +736,6 @@ class PostsRoot extends Component {
     )
   }
 }
-
-/**
- * Wrap Posts component using withPosts provider
- * for getting posts list in the Posts component
- */
-export default withPosts(PostsRoot);
 
 ```
 Next, we need to export our main component that’s located under the `containers` directory. We need to create the `index.js` file under `posts` and export the `Posts` component.
