@@ -3,7 +3,8 @@ import React, { Component } from 'react';
 import { Form, FormGroup, Label, Input, Button } from 'reactstrap';
 import { withAddPost } from '../providers';
 
-class PostForm extends Component {
+@withAddPost
+export default class PostForm extends Component {
   constructor(props) {
     super(props);
     this.submitForm = this.submitForm.bind(this);
@@ -37,5 +38,3 @@ class PostForm extends Component {
     )
   }
 }
-
-export default withAddPost(PostForm);

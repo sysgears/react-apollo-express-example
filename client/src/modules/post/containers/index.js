@@ -6,7 +6,12 @@ import { PostsList, PostForm } from '../components';
 
 import '../styles/styles.css';
 
-class PostsRoot extends Component {
+/**
+ * Wrap Posts component using withPosts provider
+ * for getting posts list in the Posts component
+ */
+@withPosts
+export default class PostsRoot extends Component {
   render() {
     const { posts, postsLoading } = this.props;
 
@@ -25,9 +30,3 @@ class PostsRoot extends Component {
     )
   }
 }
-
-/**
- * Wrap Posts component using withPosts provider
- * for getting posts list in the Posts component
- */
-export default withPosts(PostsRoot);

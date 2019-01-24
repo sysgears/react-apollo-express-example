@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { Card, CardTitle } from 'reactstrap';
+import { Card, CardTitle, CardBody } from 'reactstrap';
 
 export default class PostsList extends Component {
   constructor(props) {
@@ -16,6 +16,7 @@ export default class PostsList extends Component {
         return (
           <Card key={idx} body outline className="post-card">
             <CardTitle>{post.title}</CardTitle>
+            <CardBody>{post.content}</CardBody>
           </Card>
         );
       });
