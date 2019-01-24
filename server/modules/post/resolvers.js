@@ -1,4 +1,4 @@
-const Post = require('../../models/post.model');
+const Post = require('./models/post');
 
 // Provide resolver functions for your schema fields
 const resolvers = {
