@@ -33,6 +33,7 @@
   },
   "devDependencies": {
     "@babel/core": "^7.2.0",
+    "@babel/plugin-proposal-decorators": "^7.3.0",
     "@babel/preset-react": "^7.0.0",
     "babel-loader": "^8.0.4",
     "concurrently": "^4.1.0",
