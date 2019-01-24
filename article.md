@@ -475,7 +475,7 @@ Let’s move on step by step: First, we’ll create Apollo Client for our applic
 ### Initializing Apollo Client
 We need to initialize a new Apollo Client. Add the `createApolloClient.js` file with the following code under the `client/src/settings` directory:
 ```javascript
-import ApolloClient from "apollo-boost";
+import ApolloClient from 'apollo-boost';
 
 const apolloClient = new ApolloClient({
   uri: "http://localhost:3000/graphql"
@@ -703,10 +703,11 @@ export { default as PostsList } from './PostsList';
 Now that we can query the server and get posts, we need to add a container to render the retrieved posts. Create the `PostList` component under the `client/src/modules/posts/containers` directory with the following code:
 ```javascript
 import React, { Component } from 'react'
+import { Container, Row, Col } from 'reactstrap';
 
 import { withPosts } from '../providers';
-import { Container, Row, Col } from 'reactstrap';
 import { PostsList, PostForm } from '../components';
+
 import '../styles/styles.css';
 
 class PostsRoot extends Component {

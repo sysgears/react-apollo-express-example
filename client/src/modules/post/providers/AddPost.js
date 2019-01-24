@@ -1,9 +1,10 @@
 import React from 'react';
 import { gql } from 'apollo-boost';
 import { Mutation } from 'react-apollo';
-import { GET_POSTS } from "./PostsList";
 
-export const ADD_POST = gql`
+import { GET_POSTS } from './PostsList';
+
+const ADD_POST = gql`
   mutation($title: String!, $content: String!) {
     addPost(title: $title, content: $content) {
       title

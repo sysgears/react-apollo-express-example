@@ -1,8 +1,9 @@
 import React, { Component } from 'react'
+import { Container, Row, Col } from 'reactstrap';
 
 import { withPosts } from '../providers';
-import { Container, Row, Col } from 'reactstrap';
 import { PostsList, PostForm } from '../components';
+
 import '../styles/styles.css';
 
 class PostsRoot extends Component {
