@@ -1,6 +1,7 @@
 .container {
+  margin-top: 25px;
   padding: 25px 15px;
-  background-color: #f4f5f9;
+  background-color: #f5f7f9;
 }
 
 .card-body {
@@ -8,6 +9,8 @@
 }
 
 .post-card {
+  width: 350px;
+  margin: 7px auto;
   cursor: pointer;
   color: #880a8e;
   box-shadow: 1px 2px 3px rgba(136,10,142,0.3);

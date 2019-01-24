@@ -11,7 +11,7 @@ class PostsRoot extends Component {
 
     return (
       <Container>
-        <h2 className="posts-title">Posts Component</h2>
+        <h2 className="posts-title">Posts Module</h2>
         <Row>
           <Col>
             <PostsList postsLoading={postsLoading} posts={posts} />

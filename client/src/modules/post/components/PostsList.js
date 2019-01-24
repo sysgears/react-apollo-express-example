@@ -22,8 +22,8 @@ export default class PostsList extends Component {
     } else {
       return (
         <div>
-          <h2>No posts available</h2>
-          <p>Use the form on the right to create a new post</p>
+          <h3>No posts available</h3>
+          <p>Use the form on the right to create a new post.</p>
         </div>
       );
     }
