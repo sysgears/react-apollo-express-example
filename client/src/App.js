@@ -6,7 +6,6 @@ import apolloClient from './config/createApolloClient';
 
 import { Posts } from './modules';
 
-
 class App extends Component {
   render() {
     return (

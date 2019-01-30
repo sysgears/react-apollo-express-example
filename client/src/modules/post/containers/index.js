@@ -2,7 +2,7 @@ import React, { Component } from 'react'
 import { Container, Row, Col } from 'reactstrap';
 
 import { withPosts } from '../providers';
-import { PostsList, PostForm } from '../components';
+import { PostList, PostForm } from '../components';
 
 import '../styles/styles.css';
 
@@ -11,7 +11,7 @@ import '../styles/styles.css';
  * for getting posts list in the Posts component
  */
 @withPosts
-export default class PostsRoot extends Component {
+export default class PostRoot extends Component {
   render() {
     const { posts, postsLoading } = this.props;
 
@@ -21,13 +21,13 @@ export default class PostsRoot extends Component {
         <hr />
         <Row>
           <Col>
-            <PostsList postsLoading={postsLoading} posts={posts} />
+            <PostList postsLoading={postsLoading} posts={posts} />
           </Col>
           <Col>
             <PostForm />
           </Col>
         </Row>
       </Container>
-    )
+    );
   }
 }

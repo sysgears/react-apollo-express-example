@@ -1,238 +1,389 @@
 # How to Create an Apollo, React, and Express application
-Apollo is a great set of libraries that simplify our work with GraphQL in JavaScript-based applications. But how does Apollo actually work? The official Apollo documentation gives quite a few real-life code examples, but they’re all put out of context. To make clearer how Apollo works, we explain how to build a JavaScript application with an Express server and a React client that use Apollo to communicate. We also take our time to compare Apollo to GraphQL to make sure that we’re in the same boat when building the application.
-Once you complete the tutorial and understand how all the key technologies work together, it may be worth trying out Create Apollo App, a simple command-line tool that helps to generate a fully configured Express, React, and Apollo project with just one command.
+
+Creating a React, Express, and Apollo (GraphQL) application can be a serious challenge, and while there are tools like
+<a href="https://github.com/sysgears/create-apollo-app" title="A Command Line tool to generate Apollo, Express, React,
+React Native applications" target="_blank">Create Apollo App</a> that simplify generation of a boilerplate project with
+these technologies, it’s best to have a clear understanding how such an application can be built.
+
+In this tutorial, we show how to create a modular application with the MongoDB, Express, React, Node.js (MERN) stack
+that uses Apollo, a popular GraphQL implementation for JavaScript applications.
+
+But before we dive deep into the implementation details, we want to give a bird view on what this MERN application
+powered by Apollo will look like.
+
 ## An overview of Apollo, React, and Express application
-Before we dive deep into the implementation details, we want to give a bird view on what our React and Express application powered by Apollo will look like.
-We’re going to build a simple application that displays posts on the client and uses GraphQL to fetch the posts from the server as well as send new posts to the server to save them in the database. To implement this solution, we’ll:
-* Build an Express server application that uses Apollo Server
-* Connect the server to MongoDB using Mongoose
-* Build a React client application that uses Apollo Client
-Additionally, we also use React Bootstrap 4 components to use generic components such as Button, Form, and others with added styles.
-Throughout the project, we use Yarn to install and handle the dependencies, but you can use the standard package manager as well. We also recommend using the latest stable version of Node.js, but any version starting from Node.js 6^ will make it.
-We assume that you already have a basic understanding of React, Express, MongoDB, and GraphQL. And even if you’re not familiar with all the mentioned technologies, we still give a detailed explanation of each code snippet to help your understand how and why everything works.
-## Express, React, Apollo application structure
-The application that you’re going to create is typical of many JavaScript-based project. Here’s what it look like:
-```
-graphql-app
-├── client                              # The frontend package
-│   └── src                             # All the source files of the React app
-│     ├── modules                       #
-│     │   ├── post                      # The Posts module
-│     │   └── index.js                  # Entry point for the Post module
-│     ├── settings
-│     ├── App.js
-│     ├── index.html
-│     └── index.js
-├── node_modules                        # Global Node.js modules
-└── server                                          # Server package
-    ├── graphqlSchema.js                # GraphQL API implementation
-    ├── resolver.js                     # Database migrations and seeds
-    └── server.ts                       # Entry point to back end with hot code reload
-├── .gitignore
-├── package.json
-├── webpack.config.js
-└── tools                                            # All build and CLI-related files
-```
-Note that in a real application we would completely separate the client from the server: they both would have their own dependencies and package.json files. But for simplicity, we keep the application structure like the one shown above.
-As a final step before we start building the application, let’s compare Apollo to GraphQL.
-## Apollo vs GraphQL
-How does Apollo compare to GraphQL? You might have already used the Fetch API, XMLHttpRequest, or some HTTP client to build AJAX requests to the back-end API. In particular, if you were building client-side applications with React, you might be familiar with Axios, one HTTP client that simplifies the use of Fetch API.
-To put it in crude terms, GraphQL finds itself on the same level as Fetch, while Apollo Client is a wrapper around GraphQL just like Axios is for Fetch. We use apollo-boost, a library that includes all the Apollo parts necessary to build GraphQL queries and mutations on the client.
-As for the server application, instead of using the `graphql` library to tediously create GraphQL types and mutations, we can benefit from Apollo Server to greatly simplify the work with GraphQL.
-To give you a more concrete example of why using Apollo is great, have a look at at a typical GraphQL schema that you’d created with `graphql` on an Express server:
-```javascript
-const {
-  GraphQLSchema,
-  GraphQLObjectType,
-  GraphQLString,
-  GraphQLID,
-  GraphQLList
-} = require('graphql');
 
-const PostType = new GraphQLObjectType({
-  name: 'Post',
-  fields: () => ({
-    id: { type: GraphQLID },
-    content: { type: GraphQLString }
-  })
-});
+You’re going to build an application that'll display posts, fetch them from a backend API, and sends new posts to the
+server to save them in the database.
 
-const RootQuery = new GraphQLObjectType({
-  name: 'RootQueryType',
-  fields: {
-    posts: {
-      type: new GraphQLList(PostType),
-      resolve(parent, args) {
-        // code to get data from db or other source
-        return Post.find({});
-      }
-    }
-  }
-});
+To implement this application, you'll:
 
-module.exports = new GraphQLSchema({
-  query: RootQuery
-});
-```
-Writing this amount of code can be very entertaining for the first couple of times. But in practice, we need to write concise code, so here’s how we can rewrite the previous code example using Apollo Server:
-```javascript
-const { gql } = require('apollo-server-express');
+* Create an Express server application that uses Apollo Server;
+* Connect the server to MongoDB using Mongoose;
+* Build a React client application that uses Apollo Client; and
+* Create a Post module on both client and server to handle posts.
 
-const typeDefs = gql`
-  type Post {
-    title: String,
-    content: String
-  },
-  type Query {
-    posts: [ Post ]
-  }
-`;
+Throughout the project, we install and handle the dependencies with Yarn, but you can use NPM as well. We also
+recommend using the latest stable version of Node.js, although any version starting from Node.js 6 will make it.
 
-const resolvers = {
-  Query: {
-    posts: () => Post.find({}),
-  }
-};
+We assume that you already have basic understanding of React, Express, MongoDB, and GraphQL. And even if you’re not
+familiar with these technologies, with the detailed explanation we give on each code snippet you’ll be able to grasp how
+the application works.
 
-module.exports = { typeDefs, resolvers };
+Besides the MERN plus Apollo stack, we use Reactstrap components such as Container, Button, Form, FormControl, and
+others to create layouts with generic Bootstrap styles.
+
+Next, let's review the project structure.
+
+### Express, React, Apollo application structure
+
+Most tutorials provide simplified structure for Express, React, and Apollo applications with the idea to focus on the
+implementation rather than how the project looks. However, we're going to show modular approach to bring this
+application closer to real-world projects.
+
+Here’s what the application structure looks like:
+
 ```
-With all the obvious staff out of the way, we can focus on implementing our application, and we begin with the Apollo Server and Express part.
-## Creating an Apollo and Express server
-### Initializing an Express application and installing the dependencies
-As with any project, we need to first initialize it. Start by running the commands below:
-```bash
-# Create a new GraphQL project
-mkdir graphql-app
-# Go into the project
-cd graphql-app
-# Initialize a new project
-# Use the --yes flag to create package.json with defaults
-yarn init --yes
+apollo-app
+├── client                     # The client package
+│   └── src                    # All the source files of the React app
+│       ├── config             # The React application settings
+│       ├── modules            # The client-side modules
+│       ├── App.js             # The React application's main component
+│       ├── index.html         # React application template
+│       └── index.js           # React application entry point
+├── node_modules               # Global Node.js modules
+├── server                     # The server package
+│   ├── config                 # The Express application configurations
+│   ├── modules                # Server modules
+│   └── server.js              # The Express application's entry point
+├── package.json               # Project metadata and packages
+└── webpack.config.js          # Webpack configuration for React
 ```
-As we’ve shown in the application structure, our client and server code will be stored in separate directories. For now, just create the `server` directory under `graphql-app`:
-```bash
-# Make sure you are in the graphql-app root folder
-mkdir server
-```
-We have now the space for the Express server application. It’s time to install the server dependencies.
-### Installing the dependencies for the Express server
-Run the following two commands (separately) to install all the Express dependencies:
-```bash
-# Install basic Express application dependencies
-yarn add express apollo-server-express mongoose
-# Install nodemon to development dependencies
-yarn add nodemon --dev
-```
-Naturally, the `express` package helps to create an Express server application. To create a GraphQL schema and resolvers with Apollo Server, `apollo-server-express` is necessary. We also install mongoose, a package that connects to MongoDB and can send requests to the database.
-Finally, we recommend installing `nodemon`, an optional package, which is great in that it streamlines working with Express applications. Nodemon re-builds and re-runs the application whenever you change its code, and all the changes are immediately reflected in the application.
-Notice that Express, apollo-server-express, and mongoose are all installed into `dependencies` in `package.json` (with NPM, you’d have to use the `--save-dev` or `-S` flag; Yarn uses the `--save` flag by default). Nodemon, however, needs to be installed into `devDependencies`, which is why the flag `--dev` was used.
-### Installing MongoDB
-You can skip over to Express application setup if you have already MongoDB installed and running. If not, run the following commands to install MongoDB (we use the commands for Ubuntu 18.04, but you can consult the official MongoDB documentation for other installation options):
-```
-# Import the public key used by the package management system
+
+The application will have two separate directories &mdash; `server` and `client` &mdash; to store the server and client
+files respectively. This structure also has a single `package.json` file, which will contain all the dependencies. In a
+real-world application, however, we recommend that you completely separate the client from the server so they have their
+own dependencies and `package.json` files. We don't create two `package.json` files for simplicity.
+
+Now, we can focus on implementing the application, and we start off with installing MongoDB. After that, we switch to
+creating an Express server application that uses Apollo Server to handle GraphQL requests. In the last section, we
+review the React application that uses Apollo Client and `react-apollo` to handle GraphQL.
+
+## Installing MongoDB
+
+You can <a href="#initializing-express-react-apollo-application">skip over to creating the application</a> if you
+already have MongoDB installed and running. If not, run the following commands to install MongoDB. Note that we use the
+commands for Ubuntu 18.04, and you need to consult the
+<a href="https://docs.mongodb.com/manual/installation/#mongodb-community-edition" target="_blank"
+title="MongoDB Community Edition installation options">official MongoDB documentation</a> for the other installation
+options:
+
+```sh
+# #1 Import the public key used by the package management system
 sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 9DA31620334BD75D9DCB49F368818C72E52529D4
-# Create a list file for MongoDB
+
+# #2 Create a list file for MongoDB
 echo "deb [ arch=amd64 ] https://repo.mongodb.org/apt/ubuntu bionic/mongodb-org/4.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-4.0.list
-# Reload local package database
+
+# #3 Reload local package database
 sudo apt-get update
-# Install MongoDB
+
+# #4 Install MongoDB
 sudo apt-get install -y mongodb-org
+```
+
+Once the installation is complete, you can check if the MongoDB server is up and running:
+
+```sh
 # Verify the status of MongoDB server
 sudo systemctl status mongod
 ```
-If you run the last command from the list above, you should see that MongoDB is up and running: `Active: active (running) since Tue 2019-01-08 08:33:00 EET; 51min ago`. However, if you see the message similar to this – ` Active: inactive (dead) since Tue 2019-01-08 09:27:25 EET; 10s ago`, then you need to run one of the commands below:
-```bash
+
+After running the command, you should see a message similar to this: `Active: active (running) since Tue 2019-01-08 08:33:00 EET; 51min ago`.
+However, if you see the message `Active: inactive (dead)`, then you need to run one of the commands below:
+
+```sh
 # Restart MongoDB
 sudo service mongod restart
+
 # Or always start MongoDB on the system startup
 sudo systemctl enable mongod
 ```
-Now that MongoDB is up and running, we need to set up the Express application.
-### Express server setup
-Create the `server.js` file under the `server` folder and add the basic code below:
+
+The first command restarts the MongoDB server, while the second command configures MongoDB to always run on the system
+startup.
+
+Now we can focus on creating the application.
+
+## <a name="initializing-express-react-apollo-application"></a> Initializing an Express, React, Apollo application
+
+Initialize a new project by running the commands below:
+
+```bash
+# #1 Create a new folder for the project
+mkdir apollo-app
+
+# #2 Go into the project
+cd apollo-app
+
+# #3 Initialize a new project
+# Use --yes to create a default package.json
+yarn init --yes
+```
+
+You get a directory `apollo-app` (or whatever you named it) and a `package.json` file with some default project
+metadata. (Our choice for the project name is dictated by the application design: This application uses Apollo with
+GraphQL instead of a traditional RESTful approach.)
+
+In the next section, you'll create an Express application with Apollo Server.
+
+## Creating an Express application with Apollo Server
+
+An Express application you're going to build has the following structure:
+
+```
+apollo-app
+├── server                              # The server package
+│   ├── config                          # The Express application configurations
+│   │   └── database.js                 # Mongoose configurations
+│   ├── modules                         # Server modules
+│   │   └── post                        # The Post module
+│   │       ├── models                  # Mongoose models for Post module
+│   │       │   └── post.model.js       # Mongoose Post model
+│   │       ├── graphqlSchema.js        # GraphQL types and mutations
+│   │       └── resolvers.js            # GraphQL resolver functions
+│   └── server.js                       # The Express application entry point
+```
+
+The `server.js` is an entry point for this Express application; in this file, an Express app and Apollo Server are
+initialized. The `config` folder will contain all the Express application configurations. For example, the mongoose
+configurations will be stored in `server/config/database.js`.
+
+The server application also has the `modules` folder to store all Express modules. In this application, there's just one
+module Post, which will have a `Post` model, a GraphQL schema created with Apollo Server, and resolvers to handle
+GraphQL queries. Similarly, you can create other server modules under `modules` with their own models, schemas, and
+resolvers.
+
+Let's create an Express server application with this structure.
+
+### <a name="installing-dependencies-for-express"></a> Installing dependencies for an Express server
+
+Run the following command to create the `server` directory under the root `apollo-app`:
+
+```bash
+# Make sure you are in the apollo-app root folder
+mkdir server
+```
+
+That’ll create a space for an Express server application. It’s time to install a few dependencies for Express, Apollo,
+and MongoDB.
+
+Run the following two commands in succession to install all the Express dependencies that the application needs:
+
+```bash
+# #1 Install the basic Express application dependencies
+yarn add express apollo-server-express graphql mongoose
+
+# #2 Install nodemon to development dependencies
+yarn add nodemon --dev
+```
+
+Let’s clarify what all these packages are used for. Naturally, `express` creates an Express server application. To build
+a GraphQL schema and resolvers with Apollo Server, `apollo-server-express` must be installed with `graphql`. Finally,
+you need to install `mongoose`, a package that connects to and can query a MongoDB database.
+
+With the second command, you install `nodemon`, an optional package, which is great in that it simplifies your work
+with Express applications &mdash; `nodemon` automatically re-builds and re-runs the application whenever you change its
+code.
+
+### Creating a script to run an Express app
+
+Provided that you installed nodemon, you can add the following script to the `package.json` file:
+
+```json
+{
+  "scripts": {
+    "server": "nodemon ./server/server.js"
+  }
+}
+```
+
+Next, we create `server.js`.
+
+### Creating an entry point for an Express server application
+
+Create `server.js` under the `server` folder and add the basic code below:
+
 ```javascript
-// #1 Import express and ApolloServer
+// #1 Import Express and Apollo Server
 const express = require('express');
 const { ApolloServer } = require('apollo-server-express');
+
 // #2 Import mongoose
 const mongoose = require('./config/database');
-// #3 Import GraphQL type definitions and resolvers
-const typeDefs = require('./graphqlSchema');
-const resolvers = require('./resolvers');
 
-// #4 Create Apollo server
+// #3 Import GraphQL type definitions
+const typeDefs = require('./modules/post/graphqlSchema');
+
+// #4 Import GraphQL resolvers
+const resolvers = require('./modules/post/resolvers');
+
+// #5 Create an Apollo server
 const server = new ApolloServer({ typeDefs, resolvers });
 
-// #5 Create an Express application
+// #6 Create an Express application
 const app = express();
 
-// #6 Use the Express application as middleware in Apollo server
+// #7 Use the Express application as middleware in Apollo server
 server.applyMiddleware({ app });
 
-// #7 Set the port that the Express application will listen to
-app.listen(3000, () => console.log(`Server running on http://localhost:${port}${server.graphqlPath}`);
+// #8 Set the port that the Express application will listen to
+app.listen({ port: 3000 }, () => {
+  console.log(`Server running on http://localhost:${port}${server.graphqlPath}`);
+});
 ```
-Let’s explain what’s happening in the code snippet above.
-First, we import `express` and `apollo-server-express` respectively to create an Express application and an instance of Apollo Server. We also import a mongoose instance from the `config/database.js` file to connect to MongoDB – the file doesn’t exist yet.
-Next, we import the Apollo type definitions and resolvers – `typeDefs` and `resolvers`, the two key components that will let us use GraphQL. We create these components in the later sections.
-We also create an Apollo server and pass it the `typeDefs` and `resolvers`. The Express application must be passed as a middleware to the Apollo server. Finally, we set the application port and log out a message when the Express application is up and running.
-Provided that you installed nodemon, you can add the following script to the `package.json` file:
-```json
-{
-    "server": "nodemon server/server.js"
-}
-```
-And if you decided not to use nodemon, add the following command instead:
-```json
-{
-    "server": "node server/server.js"
-}
-```
-Remember that with the command "node server/server.js", you have to manually stop the application and run it again if you change anything in code to see the latest changes.
-You _can_ run the Express server right now, but the console will yell with the errors – the Mongoose instance, type definitions, and resolvers don’t exist yet. Let’s create them.
-### Creating a Mongoose instance
-We need to connect our Express application to a MongoDB instance, and mongoose will helps us.
-Create a new directory `config` under `server` and add the `database.js` file with the following code to that directory:
+
+Let’s explain what’s happening in the code snippet.
+
+First, we import `express` and `apollo-server-express` to be able to create an Express application and an instance of
+Apollo Server respectively. We also import a mongoose instance from the `config/database.js` file to connect to MongoDB
+&mdash; the file doesn’t exist yet, but we'll create it soon.
+
+Next, we import the Apollo type definitions and resolvers &mdash; `typeDefs` and `resolvers`. They’re the two key
+components necessary for Apollo to work. We also create these components in the later sections.
+
+After importing the dependencies, we create an instance of Apollo Server and pass it the `typeDefs` and `resolvers`. An
+Apollo server will then be able to handle GraphQL queries coming from the client application and using suitable GraphQL
+types and resolvers.
+
+Notice that the Express application must be passed as middleware to the Apollo server. That's necessary so that once
+Apollo handles GraphQL queries, it can cede the control to Express.
+
+Finally, we set the application port and log out a message when the Express application is up and running.
+
+You might run the Express server right now, but the console will yell with errors: a mongoose instance, type
+definitions, and resolvers don’t exist. So let's create them.
+
+### Creating a mongoose instance
+
+To connect to MongoDB, you first need to configure mongoose. The database configs will be kept in a dedicated folder
+`server/config`. Create `database.js` with the following code under `server/config`:
+
 ```javascript
 // The file server/config/database.js
 // #1 Import mongoose
 const mongoose = require('mongoose');
 
-// #2 Create a query string to connect to MongoDBserver
-const DB_URI = 'mongodb://localhost:27017/apollo-app';
+// #2 Create a query string to connect to MongoDB server
+const DB_URI = 'mongodb://localhost:27017/graphql-app';
 
-// #3 Connect to MongoDB and add a couple of basic event listeners
+// #3 Connect to MongoDB
 mongoose.connect(DB_URI, { useNewUrlParser: true });
+
+// #4 Add basic event listeners on the mongoose.connection object
 mongoose.connection.once('open', () => console.log('Connected to a MongoDB instance'));
 mongoose.connection.on('error', error => console.error(error));
 
-// #4 Export mongoose. You’ll use it in server/server.js file
+// #5 Export mongoose. You’ll use it in server/server.js file
 module.exports = mongoose;
 ```
-In the code above, we require mongoose, use a sort of default URI to connect to the `apollo-app` database in MongoDB (there’s no need to manually create a database – it’ll be created automatically when you send first mutation query from the Express application).
-Next, we connect to the database using the `DB_URI` request string and the `mongoose.connect()` method. Also, we set the `{ useNewUrlParser: true }` to remove the warning `DeprecationWarning: collection.ensureIndex is deprecated`, which may produce with the latest mongoose versions.
 
-We also add a couple of event listeners for the 'open' and 'error' events to log out the messages when Mongoose connects to the database.
-Now if you run the Express application, it’ll we able connect to MongoDB through the mongoose instance. Although the application will still crash because there’s no GraphQL schema with type definitions and resolvers.
-### Creating a GraphQL schema for posts
-To be able to use GraphQL, we need to create a GraphQL schema. For a recap, you can think of GraphQL schema as of an object that contains the descriptions of the types, queries, and mutations. In the simplest terms, types describe what kind of objects with what fields we can return to the client application. Queries define what client requests with what data the Express server must respond to. Mutations determine how the new data is updated or added.
-We use Apollo to create a GraphQL schema. First, add a new file `graphqlSchema.js` with the following code under the `server` directory:
+In the code above, we first require mongoose and create a sort of default URI `mongodb://localhost:27017/apollo-app` to
+connect to the `apollo-app` database in MongoDB. There’s no need to manually create this database: MongoDB will create
+it automatically once you send your first query using mongoose. You can choose any name for a database; we decided to
+name it `apollo-app`, the same as the project.
+
+After requiring mongoose and creating a URI, the application connects to the database by calling the
+`mongoose.connect()` method. You must passing `DB_URI` as the first argument to `connect()`. Also, pass a second
+argument `{ useNewUrlParser: true }` to enable mongoose’s URL parser. This argument is necessary to remove the warning
+`DeprecationWarning: current URL string parser is deprecated`, which may produce with the latest mongoose versions.
+
+We also add a couple of event listeners for the `open` and `error` events on the `mongoose.connection` object, which you
+can understand as a _database the application connected to_, and log out a couple of messages.
+
+Now, if you run the Express application, it’ll we able connect to MongoDB using the mongoose instance: recall the line
+`const mongoose = require('./config/database');` in `server.js`.
+
+The post module we create next.
+
+### Creating a post module for server application
+
+Because the application has modular structure, you need to create a new folder `modules` under `server` to keep all the
+backend modules in one place. And since each module should be stored in its own folder, create `modules/post` for the
+Post module. Now you have `server/modules/post` to store all files relevant for the module. We create a mongoose `Post`
+model, GraphQL schema, and resolvers one by one in the following sections.
+
+#### Creating a mongoose model for posts
+
+With mongoose, creating a model to query MongoDB for data is easy. You first need to describe a mongoose schema to
+specify the fields that each new object must have. After that, you can create a model using the `model()` method, and
+the model will be used to create new objects to be stored in the database.
+
+We suggest that you store all models under `server/modules/{module}/models` directories. For this reason, the Post
+module will have its models under `server/modules/post/models`.
+
+Here’s the code for a simple mongoose schema and model for posts:
+
+```javascript
+// #1 Import the constructor Schema and the model() method
+// Note the use of ES6 desctructuring
+const { Schema, model }  = require('mongoose');
+
+// #2 Create a post schema using mongoose Schema
+const postSchema = new Schema({
+  title: String,
+  content: String
+});
+
+// #3 Create a post model with mongoose model() method
+const Post = model('post', postSchema);
+
+module.exports = Post;
+```
+
+As you can see, a mongoose Schema class is used with an object parameter. In case with posts, the object parameter sets
+the two fields &mdash; `title` and `content` &mdash; both of types `String`.
+
+To create a new model, it’s enough to call the mongoose `model()` method passing it a model name as the first argument
+and a schema as the second argument. The model name must be singular and lowercase letters: `'post'`. Mongoose, however,
+will create the _posts_ collection (note the plural form) in the `apollo-app` database.
+
+There are no resolvers with a GraphQL schema. Let's build them.
+
+#### Creating a GraphQL schema for posts
+
+Let’s first recap how GraphQL works. GraphQL needs a schema to understand how to retrieve and save data (posts in this
+application). Don’t confuse a _GraphQL_ schema and a _mongoose_ schema, though! These are two different objects that
+serve different purposes.
+
+You can think of a GraphQL schema as of an object that contains the descriptions of the types, queries, and mutations:
+
+* Types define the shape for data that the server and client send back and forth.
+* Queries define how the Express server must respond to the client’s GET requests.
+* Mutations determine how the new data is created or updated.
+
+With the obvious stuff out of the way, we can switch to creating a GraphQL schema for the Post module using Apollo.
+
+Add a new file `graphqlSchema.js` under the `server/modules/post` folder. Add the following code to the file:
+
 ```javascript
 // #1 Import the gql method from apollo-server-express
 const { gql } = require('apollo-server-express');
 
-// #2 Construct a schema, using the GraphQL schema language
+// #2 Construct a schema with gql and using the GraphQL schema language
 const typeDefs = gql`
-  # Define the type Post with two fields
+  #3 Define the type Post with two fields
   type Post {
+    _id: ID,
     title: String,
     content: String
   },
-  # Define the query type that must respond to 'posts' query
+  #4 Define the query type that must respond to 'posts' query
   type Query {
     posts: [Post]
   },
-  # Define a mutation to add new posts with two required fields
+  #5 Define a mutation to add new posts with two required fields
   type Mutation {
     addPost(title: String!, content: String!): Post,
   }
@@ -240,31 +391,49 @@ const typeDefs = gql`
 
 module.exports = typeDefs;
 ```
-To create type definitions, we need to use the `gql` method from the `apollo-server-express` package and put a string after it with a schema description.
-First, we create a type Post. Since we’re building an application to show posts, we need to tell GraphQL that we’ll be passing around post objects. Each post, as you can see from the type definition of Post, will contain three fields – an ID, a title, and a content. Each field must also have the types: the title and content are both strings, and the ID has the custom GraphQL type `ID`.
-Second, we need to create a query. In terms of RESTful design, you can understand this `type Query` as our actual endpoint, and we can rewrite this query in REST the following way:
-```js
-const query = gql`
-    type Query {
-        posts: [ Post ]
-}`;
-// Using an Express built-in router
-router.get(`posts`, (req, res) => { // Code that handles the GET request for `posts` });
-```
-Also notice that the response from the server will be an array of posts, which is why we pass `[ Post ]` as the type to the `posts` property on query.
-Finally, we need to create a mutation – we want to save users’ posts, don’t we? The mutation will contain the method `addPost(title: String!, content: String!): Post`, which will accept a new post’s title and content and return the Post type after a post was saved to the database.
-Note that by using the exclamation marks for the parameters in `addPost()` method we specify that both title and content for posts must be given. In other words, when you’ll be sending a request from the client application, your POST requests to create a post must contain the title and content. Otherwise, you’ll get an error.
-The last step we need to do is export the type definitions – `module.exports = typeDefs;` – to use them in the Apollo server that we’ve created before.
-It’s time to create resolvers that’ll process our queries and mutations.
-### Implementing GraphQL resolvers with Apollo
-Our GraphQL schema contains the queries and mutations, but they don’t really do anything. To actually handle the client requests, the server needs resolvers, which are just functions that connect to the database to retrieve or mutate the requested data.
-To store our resolvers, let’s create the `resolvers.js` file under the `server` directory. The code snippet below has two groups of resolvers – Query and Mutation, which actually contain the methods to return or mutate posts:
+
+To create type definitions, Apollo's `gql` method is used.
+
+First in the schema description, we create a type `Post` to tell GraphQL that we’ll be passing around post objects. Each
+post will have three fields &mdash; an ID, a title, and a content. Each `Post` field must have its own type, and so we
+used an `ID` type for `_id` and a `String` type for `title` and `content`.
+
+Second, the schema contains a query type. In terms of the RESTful design, you can understand `type Query` as an endpoint
+GET for a URL `http://my-website.com/posts`. Basically, with `type Query { posts: [Post] }` you say, _"My Express server
+will be able to accept GET requests on `posts`, and it must return an array of Post objects on those GraphQL requests."_
+
+Our GraphQL schema also has a mutation `addPost()` to save users’ posts. This mutation specifies that it needs the
+frontend application to send a new post’s title and content. Also, an object of the `Post` type will be returned once
+this mutation is done.
+
+You might have noticed that the mutation doesn’t use the `_id` field, but you don’t have to create this field on the
+frontend as MongoDB automatically generates an ID for each document you insert into a database, and that ID will be sent
+from the server to the client.
+
+It’s time to create the second part of the parameter object, resolvers, which must be passed to `ApolloServer` to
+process the queries and mutations described in this schema.
+
+#### Implementing GraphQL resolvers with Apollo
+
+A GraphQL schema with queries and mutations doesn’t really do anything other than outlining what data types are
+available and how to respond to different HTTP requests. To actually handle the client requests, Apollo Server needs
+resolvers, which are just functions that retrieve or mutate the requested data.
+
+The Post module needs another file to store its resolvers, `resolvers.js`, which you can add next to `typeDefs.js` under
+the `server/modules/post` directory.
+
+The code snippet below has two groups of resolvers, Query and Mutation. Also notice the imported mongoose Post model
+that you’ve already created, which is necessary to work with posts that are stored in MongoDB:
+
 ```javascript
-// #1 Import the Post model
+// #1 Import the Post model created with mongoose
 const Post = require('./models/post');
 
-// #2 Create resolver functions that will handle GraphQL requests
-// The Query fields must correspond to the query created in schema – posts
+// #2 Create resolver functions to handle GraphQL queries
+/**
+ * Query resolver "posts" must return values in response to
+ * the query "posts" in GraphQL schema.
+ */
 const resolvers = {
   Query: {
     // Query which returns posts list
@@ -272,101 +441,239 @@ const resolvers = {
   },
 
 /**
- * Mutation which provides functionality for adding posts.
- * The mutation methods should also return the created object.
+ * Mutation resolver addPost creates a new document in MongoDB
+ * in response to the "addPost" mutation in GraphQL schema.
+ * The mutation resolvers must return the created object.
  */
   Mutation: {
-    addPost: (_, post) => {
-                const post = new Post({ title: post.title, content: post.content });
-                return post.save();
+    addPost: (parent, post) => {
+      // Create a new post
+      const newPost = new Post({ title: post.title, content: post.content });
+      // Save new post and return it
+      return newPost.save();
     }
   }
 };
+
 module.exports = resolvers;
 ```
-In the code snippet above, we use the mongoose `Post` model to get all the posts from MongoDB using the `find()` method. We create the `Post` model in a later section. For now, let’s focus on the resolvers.
-When we need to get data from a database, we need to specify the `Query` property that’ll contain the resolvers for all the query types that we listed in the GraphQL schema. In other words, in `resolvers.js` the `Query` object has the property `posts`, which corresponds to the query `posts` in GraphQL schema. Apollo will simply use the resolver function `Query.posts()` to get and serve posts when the `posts` query was sent from the client.
-Similarly, when we need to save a new post – to mutate the application state – we need to add a dedicated `addPost` resolver to the Mutation object. The `addPost()` method accepts two parameters (in fact, it can accept up to four parameters, but we don’t need all of them for the purpose of this guide). We don’t need to use the first parameter `parent`; for the sake of information, `parent` refers to the parent resolver when you have nested resolvers. The second parameter is the post data sent by the client application. We can use these data to create a new post instance and save it to the database.
-Pay attention that mutations should return the object that was created. The arrow functions in JavaScript implicitly return a value, which is a new post object (strictly speaking, the `Post` constructor returns a Promise, which automatically gets unwrapped to the post object on the client).
-By this time, we’ve created a GraphQL schema with type definitions. We also have resolvers to handle queries and mutations. The last thing we need to do is create a mongoose model to get posts from and save new posts to the database.
-### Creating a mongoose model for posts
-Using mongoose, we can handle posts by creating a post schema and a post model. Don’t confuse a GraphQL schema and a Mongoose schema – these are two different objects that serve different purposes.
-Here’s the code for a simplistic mongoose schema and model for posts. Notice that first we need to describe a schema, using which we can then create a model:
-```javascript
-const { Schema, model }  = require('mongoose';
-const postSchema = new Schema({
-    title: String,
-    content: String
-});
-const Post = model('post', postSchema);
-module.exports = Post;
-```
-Creating a Mongoose schema is very simple: we just need to use the `Schema` constructor and pass it the properties of the objects that we’ll be creating. In our case, each post object must contain just two fields of  string type. Notice that we don’t create a field ID – MongoDB will conveniently create the ID automatically for each post.
-To create a new model, it’s enough to use the `model()` method with the name of our model and the post schema. When creating a new instance of the `Post` model, you’ll need to pass two values into it – a title and content, which you’ll get from the mutation resolver parameters:
-```
-Mutation: {
-    addPost: (_, post) => {
-                // The Post gets the object with title and content parameters
-                // The actual values are provided by the post parameter
-                // passed to the mutation addPost
-                const post = new Post({ title: post.title, content: post.content });
-                return post.save();
-    }
-  }
-```
-Internally, when you first create a new instance of `Post` and save it to the database, mongoose will automatically create a collection `posts` in the `apollo-app` database and will save each post as a separate document into that collection.
+
+Let’s focus on the resolvers.
+
+First, you create an object with two fields &mdash; `Query` and `Mutation`. When you want to respond back to the client
+using Apollo, you need to specify the `Query` property with one or several resolvers for all the query types listed in a
+GraphQL schema. In our application, `Query` needs only one resolver `posts()` to respond to the query `posts` defined in
+`./post/graphqlSchema.js`. `posts()` will then request MongoDB for posts using the `Post` model’s `find()` method, which
+is available on all mongoose models.
+
+Similarly, when you’re saving a new post with Apollo, you need to add a dedicated `addPost()` resolver to the `Mutation`
+property. The `addPost()` resolver accepts two parameters (in fact, it can accept up to _four_ parameters according to
+Apollo documentation, but we don’t need all of them for our example).
+
+The first parameter in `addPost()`, called `parent`, refers to the parent resolver when you have nested resolvers. This
+parameter isn’t used for this mutation. The second parameter is the post data sent by the client application, and this
+data can be passed to a mongoose model when instantiating new posts:
+`new Post({ title: post.title, content: post.content })`.
+
+Pay attention to the code inside `addPost()`. Just instantiating a new document with a mongoose model doesn’t save it to
+the database, and you have to additionally call the model method `save()` on the newly created object. Also remember
+to return the object in the mutation resolver so that Express sends it back to the client (`save()` returns a new
+document after saving it to MongoDB).
 ___
-Let’s recap what we’ve created so far:
+
+Let’s recap what you’ve created so far:
+
 * A very simple Express application
 * An instance of Apollo Server to handle GraphQL on the server
-* A connection to a MongoDB instance using Mongoose
-* A GraphQL schema with queries and mutations using Apollo
-* GraphQL resolvers to get posts from the database and save new posts
-* A `Post` model to handle creation and retrieving of posts from the database
-It’s time to start building a React application that will connect to our Express server using Apollo Client.
-## Step 2. Creating React and Apollo client application
-We use the following structure for the React application: all the code is stored under the folder `client`.
+* A connection to a MongoDB instance with mongoose
+* A Post module with a model, GraphQL schema, and mutations
+
+This is what the console output should produce when you now run the Express application with `yarn server`:
+
+```sh
+λ yarn server
+yarn run v1.13.0
+$ nodemon server/server.js
+[nodemon] 1.18.9
+[nodemon] to restart at any time, enter `rs`
+[nodemon] watching: *.*
+[nodemon] starting `node server/server.js`
+Server is running on http://localhost:3000/graphql
+Connected to MongoDB
+```
+
+It’s time to start building a React application that will connect to the Express server using Apollo Client.
+
+## Creating a client application with React and Apollo Client
+
+To store the React application code, you need to create the `client/src` folder under the root:
+
+```sh
+# apollo-app root folder
+mkdir client
+cd client
+mkdir src
+```
+
+We again start with a discussion over the modular structure for the React application. You can skip the next section and
+<a href="#installing-dependencies-for-react">start building the application React</a>, though.
+
+### React and modular architecture
+
+In most cases, you build a React application like this: You create an entry point `index.js`, a root component `App`,
+and a `components` folder to store all kinds of React components. But the client application in this guide will have
+different structure reflecting the modular approach we used for our server application:
+
 ```
 graphql-app
-├── client                              # The frontend package
-│   └── src                             # All the source files of the React app
-│     ├── modules                       #
-│     │   ├── post                      # The Post module
-│     │   │   ├── containers
-│     │   │   │   └── index.js
-│     │   │   ├── providers
-│     │   │   │   ├── index.js
-│     │   │   │   └── PostsList.js
-│     │   │   ├── styles
-│     │   │   │   └── styles.css        # The styles for the Post module
-│     │   │   └── index.js
-│     │   └── index.js                  # Entry point for the Post module
-│     ├── settings
-│     │   └── createApolloClient.js
-│     ├── App.js
-│     ├── index.html
+├── client                                  # The frontend package
+│   └── src                                 # All the source files of the React app
+│       ├── modules                         # The React modules
+│       │   ├── post                        # The Post module
+│       │   ├── user                        # The User module
+│       │   └── auth                        # The Authentication module
+│       ├── config                          # React application configurations
+│       │   └── createApolloClient.js       # An Apollo Client instance
+│       ├── App.js                          # The React application root component
+│       ├── index.html                      # The React application HTML layout
+│       └── index.js                        # The entry point for React application
+```
+
+The application will have the `modules` folder with individual folders for each module: Post, User, and Auth. (We build,
+however, only a Post module in this guide.) Additionally, the folder with all modules must contain an `index.js` file
+that exports them:
+
+```javascript
+export { Posts } from './post';
+export { User } from './user';
+export { Auth } from './auth';
+```
+
+You can then import all the modules into `App.js` and add them to the root component to be rendered.
+
+Recalling that life isn't all beer and skittles, we make the structure even more complex by creating several folders in
+each module to keep module files grouped by their purpose.
+
+This is what the Post module look like (and other modules should be created with the same structure in mind):
+
+```
+modules
+├── post
+│     ├── components
+│     ├── containers
+│     ├── providers
+│     ├── styles
 │     └── index.js
-├── node_modules                        # Global Node.js modules
-├── .gitignore
-├── package.json
-└── webpack.config.js
 ```
-### Installing dependencies for React application
-We need to install a handful of dependencies to be able to run our React application. We install them by groups and explain what each dependency does.
-Since we use webpack to build the React application, we need all the webpack dependencies along with loaders and plugins to development dependencies.
-```bash
+
+Let’s clarify what's what in the module:
+
+* The `components` folder contains separate module components. Their only purpose is to render parts of the module. In
+our application, `components` will store `PostList` and `PostForm` React components.
+* `containers` will have just one file `index.js` with a root module container to render the module components.
+`index.js` will therefore import all the necessary components from `components`.
+* `providers` will contain wrappers for components. Because components shouldn’t query a server application for data,
+you should delegate this responsibility to providers. Recall the Separation of Concerns design principle, and it’ll
+become clear why we use providers.
+* `styles` will contain a `styles.css` files with module styles.
+* `index.js` exports an entire module.
+
+Although the approach of creating complicated modular structure may seem useless and mind-blowing for a small React
+application, it’ll bear fruits when your application grows. It’s a good idea to have good structure from the very
+beginning of application development.
+
+You can now focus on creating the React application.
+
+### <a name="installing-dependencies-for-react"></a> Installing React, Apollo, and webpack dependencies
+
+You need to install quite a few dependencies to be able to run a React application.
+
+For starters, since the React builds will be created with webpack, install the webpack dependencies along with loaders
+and plugins to development dependencies (read: `devDependencies` in `package.json`).
+
+```sh
 # Run from the root
-yarn add webpack webpack-cli webpack-dev-server html-webpack-plugin css-loader style-loader babel-loader --dev
+yarn add webpack webpack-cli webpack-dev-server --dev
 ```
-Besides the webpack dependencies, it’s also necessary to install two Babel dependencies that are required by `babel-loader` to transpile React code into JavaScript:
+
+The `webpack` and `webpack-cli` are the basic dependencies necessary to build bundles with webpack, and
+`webpack-dev-server` is necessary to serve the frontend applications.
+
+Now install these dependencies:
+
+```
+yarn add html-webpack-plugin css-loader style-loader babel-loader --dev
+```
+
+With `html-webpack-plugin`, you can automate creation of the `index.html` root layout for the React application; this
+plugin automatically adds the `index.js` entry point to the `script` tag in the layout. The React application also needs
+two loaders for handle CSS &mdash; `style-loader` and `css-loader`.
+
+`babel-loader`, which traspiles React code to valid JavaScript, requires two additional Babel dependencies to work
+&mdash; `@babel/core` and `babel/preset-react`. And since we’ll be using class decorators for React components, the
+`@babel/plugin-proposal-decorators` is also necessary (we’ll explain what decorators do later in the article when we
+have a look at the Post module components).
+
+Install the following three dependencies:
+
+```sh
+yarn add @babel/core @babel/preset-react @babel/plugin-proposal-decorators --dev
+```
+
+You can now install React:
+
+```sh
+yarn add react react-dom
+```
+
+Finally, to be able to use GraphQL with React, another three dependencies are required &mdash; `apollo-boost`,
+`react-apollo`, and `graphql` (you've already installed `graphql` for the server application, so there's no need to
+install it again):
+
 ```bash
-yarn add @babel/core @babel/preset-react @babel/plugin-proposal-decorators
+yarn add apollo-boost react-apollo
 ```
-After installing all the dependencies, we can configure webpack.
-### Configuring webpack for a React application
-You need to create `webpack.config.js` under the project’s root and add the code below. Note that we intentionally keep the webpack configuration minimal:
+
+`apollo-boost` is an all-in-one package provided by Apollo to let you build GraphQL queries and mutations on the client.
+React needs `react-apollo`, a library that provides custom GraphQL components, in particular, `ApolloProvider`, `Query`,
+and `Mutation`. These GraphQL components will be necessary to wrap the React layout components yielding them the data
+retrieved from the server by Apollo.
+
+We’re also going to use a UI toolkit Reactstrap to quickly create Bootstrap components with generic styles. Reactstrap
+is optional, but you’ll have to manually create the layout for your React application components without it. It's your
+call.
+
+Since Reactstrap can't work without Bootstrap, you need to install two dependencies:
+
+```sh
+yarn add reactstrap bootstrap
+```
+
+That's it. All the dependencies for a React client application are in place. Before we actually start creating a React
+application, let’s also add a script to be able to run it:
+
+```json
+{
+  "scripts": {
+    "client": "webpack-dev-server --mode development --open"
+  }
+}
+```
+
+This script will run `webpack-dev-server` in development mode. And once the client build is ready, your default browser
+will automatically open the page: notice the `--open` option.
+
+Don’t you try to run the React application _now_ as errors will ensue. You need to first configure webpack for React,
+then create React application basic files, and, finally, create a Post module.
+
+### Configuring webpack for React
+
+Create `webpack.config.js` under the project’s root folder and add the code below. There aren't many configurations as
+we intentionally keep the webpack configuration minimal:
+
 ```javascript
 const HtmlWebPackPlugin = require('html-webpack-plugin');
+
 const htmlPlugin = new HtmlWebPackPlugin({
   template: './client/src/index.html'
 });
@@ -387,7 +694,6 @@ module.exports = {
             ]
           }
         }
-
       },
       {
         test: /\.css$/,
@@ -395,36 +701,38 @@ module.exports = {
       }
     ]
   },
-  plugins: [ htmlPlugin ]
+  plugins: [htmlPlugin]
 };
 ```
-### Installing React and Apollo dependencies
-The preliminary installation is complete and we can now move on to installing React and `react-dom`:
-```bash
-yarn add react react-dom
-```
-Optionally, you can also install a UI toolkit – we use `reactstrap` – to add Bootstrap components to the application. The other necessary package is Bootstrap to add generic styles to the application:
-```bash
-yarn add reactstrap bootstrap
-```
-Finally, to be able to use GraphQL, we need to install another two dependencies:
-```bash
-yarn add apollo-boost react-apollo
-```
-Apollo Boost is an all-in-one package provided by Apollo to let us build queries and mutations on the client. We also need the `react-apollo` library that provides custom GraphQL components to wrap React components. This will let us get access data from the server from inside the React components.
-Before we actually start creating the React application, let’s also add a script to run the future React application:
-```json
-{
-    "scripts": {
-        "client": "webpack-dev-server"
-    }
-}
-```
-If you try to run the React application, you’ll get an error because we haven’t actually built anything yet.
-### Initializing a React application
-We can finally move on to building our client application with React.
-If you haven’t done this already, you need to create the `client/src` folder under the root directory of the project. Inside the `src` folder, create the other two directories: `settings` to store the Apollo configurations, and `modules` to store our post module.
-Next, create the `index.html` file and add the following HTML code, typical for React applications:
+
+This webpack configuration is typical for React applications.
+
+Webpack needs the entry to know where the application starts and the `module.rules` property to know how to handle
+different files. All the `.js` files will be processed with the `babel-loader` and `@babel/preset-react`. Additionally,
+we set the `plugins` property to use `@babel/plugin-proposal-decorators` and `{'legacy': true}`, which are default Babel
+settings for decorators. Notice that `HTMLWebpackPlugin` must be passed to the `plugins` array so that webpack knows
+what HTML file to load with the build script.
+
+The webpack configuration is done. It’s time to work on our React application.
+
+### Creating basic files for a React application
+
+You can finally move on to building a React application.
+
+Create the `client/src` folder under the root directory of the project if you haven’t done this already. Inside the
+`src` folder, create the other two: `config` to store the configurations and `modules` to store the post module.
+
+Next, you need to create the following key files for React:
+
+* `index.html`, a basic HTML template
+* `index.js`, the entry point
+* `App.js`, the root React component
+* `settings/createApolloClient.js`, an instance of Apollo Client with configurations
+
+Let’s create the listed files.
+
+Add the following HTML code into `client/src/index.html`:
+
 ```html
 <!DOCTYPE html>
 <html lang="en">
@@ -433,7 +741,7 @@ Next, create the `index.html` file and add the following HTML code, typical for 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Apollo, React, and Express Example Application</title>
+    <title>An Apollo, React, and Express Example Application</title>
   </head>
 
   <body>
@@ -442,18 +750,34 @@ Next, create the `index.html` file and add the following HTML code, typical for 
 
 </html>
 ```
-Next, let’s create the entry point for the application – the `client/src/index.js` file. Add the following code to bootstrap the React application:
+
+Note that there's no script tag with the link to the `index.js` file because `HtmlWebpackPlugin` adds it for you.
+
+Next, create the entry point for the application &mdash; the `client/src/index.js` file. Add the following code to
+bootstrap the React application:
+
 ```javascript
-import React from 'react';
+import React from 'react'
 import ReactDOM from 'react-dom';
+
 import App from './App';
 
-ReactDOM.render(<App />, document.getElementById(root));
+import 'bootstrap/dist/css/bootstrap.min.css';
+
+ReactDOM.render(<App />, document.getElementById('root'));
 ```
-The only thing missing in `index.js` is the `App` component. Let’s create it.
-### Creating main React component App.js
-`App` will render posts module. The entire application must also be wrapped in a custom Apollo Provider component, which is necessary to make possible to use Apollo Client throughout the application.
-Add the following code to `App.js`:
+
+This code is typical for any React application: You import the root `App` component, two required React dependencies,
+and Bootstrap. Finally, you render `App` into the `div#root` HTML element (found in `index.html`).
+
+### Creating the main React App component
+
+You might have already created root `App` components for your React applications with the RESTful approach, so you know
+what a React’s root component looks like. In this application, however, `App` must be wrapped into another component,
+which is provided by `react-apollo` to make it possible to use Apollo Client with React.
+
+Let’s take a look at the code in `App.js`:
+
 ```javascript
 import React, { Component } from 'react'
 import { ApolloProvider } from 'react-apollo';
@@ -463,56 +787,196 @@ import { Posts } from './modules';
 class App extends Component {
   render() {
     return (
-          <ApolloProvider client={apolloClient}>
-                <Posts />
-          </ApolloProvider>
+      <ApolloProvider client={apolloClient}>
+        <Posts />
+      </ApolloProvider>
     )
   }
 }
 
 export default App;
 ```
-As you can see, besides the basic React dependencies – `React` and `Component`, we need to import `ApolloProvider`, the instance of Apollo Client, and the Posts module.
-The Apollo provider, imported from `react-apollo`, is just a React component that wraps our entire React application. The provider needs an instance of Apollo Client to work – note the `<ApolloProvider client={apolloClient}>` line. Apollo Client is just a configuration object that will tell our application where to send requests.
-Let’s move on step by step: First, we’ll create Apollo Client for our application, and after that we’ll focus on the Posts module.
+
+As you can see, besides the basic React dependencies &mdash; `React` and `Component`, you need to import
+`ApolloProvider`, an instance of Apollo Client, and the Post module as `Posts`.
+
+`ApolloProvider` from `react-apollo` is a root component to wrap an entire React application, and it needs an instance
+of Apollo Client to work: `<ApolloProvider client={apolloClient}>`. An Apollo Client instance will tell the application
+how to query the server.
+
+Now we need to create an Apollo Client instance.
+
 ### Initializing Apollo Client
-We need to initialize a new Apollo Client. Add the `createApolloClient.js` file with the following code under the `client/src/settings` directory:
+
+Create a directory `config` under `client/src`, then add `createApolloClient.js` with the following code into `config`:
+
 ```javascript
 import ApolloClient from 'apollo-boost';
 
-const apolloClient = new ApolloClient({
-  uri: "http://localhost:3000/graphql"
+const client = new ApolloClient({
+  uri: 'http://localhost:3000/graphql'
 });
 
-export default apolloClient;
+export default client;
 ```
-There’s nothing special going on. The React application simply needs a URL that it will query; the URL is the endpoint handled by the Express application. Note that we send all requests to `/graphql`.
-### Implement the Posts module
-The next step is creation of our Posts module. The Posts module structure looks like this:
+
+There’s nothing special going on in this file. First, you import the `ApolloClient` constructor from `apollo-boost`.
+Then, when instantiating an Apollo client, you need to pass an object parameter with Apollo settings. For this
+application, only the URL is necessary so that Apollo knows where to send queries. (You may run the Express application
+and see the logged line `Server is running on http://localhost:3000/graphql`, the same URL.)
+
+## Creating a React module
+
+Under the `client/src/modules` folder, create a new directory `post` to keep the post module. Next, create another four
+sub-directories under `post`: `components`, `containers`, `providers`, and `styles`. Finally, add `index.js` with the
+following code under `post`:
+
+```javascript
+export { default as Posts } from './containers';
 ```
-graphql-app
-├── client                              # The frontend package
-│   └── src                             # All the source files of the React app
-│     ├── modules                       #
-│     │   ├── posts                     # The Post module
-│     │   │   ├── containers
-│     │   │   │   └── index.js
-│     │   │   ├── providers
-│     │   │   │   ├── index.js
-│     │   │   │   └── PostsList.js
-│     │   │   ├── styles
-│     │   │   │   └── styles.css        # The styles for the Post module
-│     │   │   └── index.js
-│     │   └── index.js                  # Entry point for the Post module
+
+As you can see, `client/src/modules/post/index.js` imports all the code from `./containers`. Create an `index.js` under
+`client/src/modules/post/containers` and copypaste the code below into it:
+
+```javascript
+import React, { Component } from 'react'
+
+import { withPosts } from '../providers';
+import { PostList, PostForm } from '../components';
+
+import { Container, Row, Col } from 'reactstrap';
+import '../styles/styles.css';
+
+/**
+ * Wrap Posts component using the withPosts provider
+ * to get data retrieved with GraphQL.
+ */
+@withPosts
+export default class PostRoot extends Component {
+  render() {
+    const { posts, postsLoading } = this.props;
+
+    return (
+      <Container>
+        <h2 className="posts-title">Posts Module</h2>
+            <hr />
+        <Row>
+          <Col>
+            <PostList postsLoading={postsLoading} posts={posts} />
+          </Col>
+          <Col>
+            <PostForm />
+          </Col>
+        </Row>
+      </Container>
+    )
+  }
+}
 ```
-Under the `client/src/modules` folder, create a new directory `posts`. This directory will contain three other directories:
-* `containers`, all the dumb components that only render various application parts
-* `providers`, contains the higher-order Posts components that will carry out GraphQL queries
-* `styles`, contains the styles for the module
-Let’s first add the basic files to the `providers` directory.
-#### Creating PostList Higher Order Component
-Because we’ll have many posts published on the website, we need to create the `PostsList` component. This component will query the server application to get the list of posts and return the data into the child component for rendering.
-Add the code below to `providers/PostsList.js` file:
+
+Let’s clarify how this code works.
+
+`post/containers/index.js` provides a root React component for the post module and is called `PostRoot`. Besides
+importing `React` and `Component`, we also imported the main provider `withPosts` (which we show later). `withPosts`
+wraps `PostRoot` and provides the posts received from the server into the `PostList` component.
+
+Note the syntax: before the class definition goes `@withPosts` as a _decorator_, and for this exact functionality you
+installed `@babel/plugin-proposal-decorators`.
+
+Instead of using a decorator, you’d have to write code like this:
+
+```js
+//…
+class PostRoot extends Component { //… }
+
+export default withPosts(PostRoot);
+```
+
+As you can see, using decorators is a bit shorter and more concise than writing `withPosts(PostsRoot)`.
+
+Let’s now discuss the layout in this container. As you noticed, we imported `Container`, `Row`, and `Col` components
+from Reactstrap. Each Reactstrap component is an HTML layout with default Bootstrap classes. Therefore, the following
+two layouts are identical:
+
+```html
+<!-- PostsRoot layout built of Reactstrap components -->
+<Container>
+    <h2 className="posts-title">Post Module</h2>
+    <hr />
+    <Row>
+      <Col>
+        <PostList />
+      </Col>
+      <Col>
+        <PostForm />
+      </Col>
+    </Row>
+</Container>
+
+<!-- An identical PostRoot layout built of HTML elements with Bootstrap classes -->
+<div className="container">
+      <h2 className="posts-title">Post Module</h2>
+      <hr />
+      <div className="row">
+        <div className="col">
+          <!-- Custom PostList component -->
+        </div>
+        <div className="col">
+          <!-- Custom PostForm component -->
+         </div>
+      </div>
+</div>
+```
+
+Reactstrap makes building React layouts with Bootstrap styles simpler than if you’d write basic HTML with Bootstrap
+classes manually.
+
+There’s one more thing to do before you can create providers and components for the post module. For convenience, it’s
+best to have `index.js` files under each module folder to exports multiple providers or components.
+
+Create an `index.js` file under `post/providers` and add another `index.js` into `post/components`.
+
+This is what the `post/providers/index.js` file should look like:
+
+```javascript
+export { default as withPosts } from './PostList';
+export { default as withAddPost } from './AddPost';
+```
+
+And this how `post/components/index.js` looks:
+
+```javascript
+export { default as PostList } from './PostList';
+export { default as PostForm } from './PostForm';
+```
+
+Thanks to such exports, you can shorten the import statements in your files. For instance, instead of importing a
+specific component with a line `import { withPosts } from '../providers/withPosts';` you can write a simpler line
+`import { withPosts } from '../providers';`. This way, you can also import _multiple_ components in a single line.
+
+Now you can focus on creating the application components and providers. First, we talk through creating the Post List
+part of the post module, and after that we’ll show Post Form.
+
+### Creating a Post List
+
+The Post List part will be responsible for two things &mdash; retrieving posts from the server and rendering them.
+Hence, you need to create two separate React components to handle those two functions.
+
+One component will only render the list; this component will be stored in `post/components/PostList.js`. Another
+component is created according to the Higher Order Component (HOC) pattern. An HOC for Post List, stored in
+`post/providers/PostList.js`, will use Apollo to query the server and pass posts as props to the dumb component.
+
+#### Creating a `PostList` Higher Order Component
+
+For a recap, HOC is a pattern in React development that lets you reuse the same logic for many components. In simple
+terms, an HOC is a React component that does something and then passes the results of calculations as a props object
+into a wrapped component that needs those results.
+
+In this application, a `post/providers/PostList` provider will use Apollo to query the server, get posts, and then pass
+those posts to the wrapped component `post/components/PostList`.
+
+Add the `PostList.js` file with the following code under `post/providers`:
+
 ```javascript
 import React from 'react';
 import { gql } from 'apollo-boost';
@@ -521,7 +985,7 @@ import { Query } from 'react-apollo';
 export const GET_POSTS = gql`
   {
     posts {
-      id
+      _id
       title
       content
     }
@@ -542,24 +1006,118 @@ const withPosts = Component => props => {
 
 export default withPosts;
 ```
-As you can see, the `GET_POSTS` constant contains our query. To create a query, you need to use a `gql` method from `apollo-boost`. Note the syntax: immediately after `gql` you need to use the backticks and add a query there. We need to get a post’s ID, title, and content, and accordingly we build a GraphQL query.
-Note that you can have many providers in the future, and so it’s best to create an `index.js` file under `providers` and export all providers this way:
 
-```javascript
-export { default as withPosts } from './PostsList';
+The `withPosts` provider uses the `gql` method from `apollo-boost` and a `Query` wrapper component from `react-apollo`.
+
+Next, a constant `GET_POSTS` is created, and it references a GraphQL query that defines the data that the server
+application must return upon each GET request &mdash; a post’s ID, title, and content.
+
+Finally, a `withPosts()` functional React component is created and is then used as a decorator in the `PostRoot`
+container. Notice how `withPosts()` accepts a `Component` parameter and then returns another function. This function
+accepts the props parameter (it may receive props from the higher React components) and returns a `react-apollo` `Query`
+component, which passes a post list, data, and props into `Component` (`PostRoot` is the component to be wrapped by
+`Query`).
+
+It should be clear by now that `post/components/PostList` receives the `postsLoading` and `posts` values through
+`PostRoot`. In its turn, `PostRoot` gets the data from `withPosts` provider. The flow looks like this:
+
+${img (location: "",
+       alt:"React’s Higher Order Component with Container and Component interaction")}
+
+There’s one more thing to explain before we move further: what’s happening in `Query`? In the `Query` wrapper component,
+we need to interpolate a function, which looks like this:
+
+```js
+{({ loading, data }) => {
+    return (<Component postsLoading={loading} posts={data && data.posts} {...props} />);
+}}
 ```
 
-### Creating AddPost High Order Component
+This function accepts an object returned by GraphQL, and this object has two properties: `loading` and `data`. `loading`
+is a boolean value, and `data` contains all the information that came upon a GraphQL query. In this application, `data`
+will contain an array of posts to be rendered by `Component`. Any other props that the rendering component may use also
+should be passed as `{...props}`.
 
-Далее нам нужно создать компонент высшего порядка. Этот компонент будет выполнять мутацию, которая запишет новый пост в список и перезагрузит список постов на клиентской части. Для этого в папке `providers` мы создаем файл `AddPost.js` и добавляем туда следующий код.
+Next, we create a layout component `PostList`.
+
+#### Creating a dumb component for the post list
+
+To render a list of posts, just add `post/components/PostList.js` with the code below to your current project:
+
+```js
+import React, { Component } from 'react';
+import { Card, CardTitle, CardBody } from 'reactstrap';
+
+export default class PostList extends Component {
+  constructor(props) {
+    super(props);
+
+    this.showPosts = this.showPosts.bind(this);
+  }
+
+  showPosts() {
+    const { posts, postsLoading } = this.props;
+
+    if (!postsLoading && posts.length > 0) {
+      return posts.map(post => {
+        return (
+          <Card key={post._id} body outline className="post-card">
+            <CardTitle>{post.title}</CardTitle>
+            <CardBody>{post.content}</CardBody>
+          </Card>
+        );
+      });
+    } else {
+      return (
+        <div>
+          <h3>No posts available</h3>
+          <p>Use the form on the right to create a new post.</p>
+        </div>
+      );
+    }
+  }
+
+  render() {
+    return (
+      <div className="posts-container">
+        {this.showPosts()}
+      </div>
+    );
+  }
+}
+```
+
+As you can see, this is a typical React component. We use Reactstrap components `Card`, `CardTitle`, and `CardBody` to
+create a layout for each post. The `showPosts()` method first verifies if posts exist, and if they do, it returns a
+layout to render posts. If there are no posts, a default layout is returned.
+
+The Post List part is created. But it doesn’t show anything, se we’re going to create a mutation and a post form to grab
+post data and send it to the server. And once a post gets back from the server, Post List will render it.
+
+### Creating a post form
+
+To be able to create posts with GraphQL mutations, an HTML form is necessary. Similarly to how you created the Post
+List part of the application, add another two files: `post/providers/AddPost.js` and `post/components/PostForm.js`.
+
+The layout component, `PostForm.js`, will only render a form and submit it with post title and content, while the
+`AddPost` provider will use a GraphQL mutation to send posts to the backend.
+
+#### Creating a Higher Order Component for post form
+
+`AddPost` is also an HOC just like `post/providers/PostList`, and it also uses a `react-apollo` wrapper component,
+although this time the necessary wrapper is `Mutation`, not `Query`. To create a GraphQL mutation, you also need the
+`gql` method from `apollo-boost`.
+
+Here’s the entire code for `AddPost`:
 
 ```javascript
 import React from 'react';
 import { gql } from 'apollo-boost';
 import { Mutation } from 'react-apollo';
-import { GET_POSTS } from "./PostsList";
 
-export const ADD_POST = gql`
+import { GET_POSTS } from './PostsList';
+
+const ADD_POST = gql`
   mutation($title: String!, $content: String!) {
     addPost(title: $title, content: $content) {
       title
@@ -585,68 +1143,57 @@ const withAddPost = Component => props => {
 };
 
 export default withAddPost;
-
 ```
 
-Теперь экспортируем новый провайдер из файла `index.js` который находится в папке `providers`.
+Similarly to the `PostList` HOC, you need to create a GraphQL mutation, which is `ADD_POST`. This mutation gets two
+values &mdash; `title` and `content` &mdash; and sends an `addPost` mutation query to the backend.
 
-```javascript
-export { default as withPosts } from './PostsList';
-export { default as withAddPost } from './AddPost';
+Now let’s take a look at the `withAddPost()` functional React component. It returns a `Mutation` wrapper component,
+which accepts the `ADD_POST` mutation to be able to send mutation queries.
+
+Let’s also have a closer look at the `Mutation` contents:
+
+```js
+{addPost => {
+  return (
+    <Component addPost={({ title, content }) => addPost({
+      variables: { title, content }, refetchQueries: [
+        { query: GET_POSTS }
+      ] })}
+    />
+  )
+}}
 ```
 
-### Creating a component for rendering posts list
+The interpolated function inside `Mutation` accepts just one argument, the `addPost` mutation, and returns `Component`,
+`PostForm` in our application.
 
-Следующим шагом создаем компонент который будет рендерить список получаемых постов. Для этого в папке `post` создаем новую папку `components`. Эта папка будет служить для хранения более мелких компонентов.
+Also notice that `Component` gets an `addPost` prop function, which will be called in `PostForm` with two parameters
+&mdash; `title` and `content`, the form data you'll submit.
 
-Теперь в папке `components` создаем файл `PostsList.js` и добавляем в него следующий код
+Inside the component's `addPost()` method there's a call of the `addPost()` mutation passed to the mutation function.
+You can see the following object:
 
-```javascript
-import React, { Component } from 'react';
-import { Card, CardTitle } from 'reactstrap';
-
-export default class PostsList extends Component {
-  constructor(props) {
-    super(props);
-
-    this.showPosts = this.showPosts.bind(this);
-  }
-
-  showPosts() {
-    const { posts, postsLoading } = this.props;
-
-    if (!postsLoading && posts.length > 0) {
-      return posts.map((post, idx) => {
-        return (
-          <Card key={idx} body outline className="post-card">
-            <CardTitle>{post.title}</CardTitle>
-          </Card>
-        );
-      });
-    } else {
-      return (
-        <div>
-          <h2>No posts available</h2>
-          <p>Use the form on the right to create a new post</p>
-        </div>
-      );
-    }
-  }
-
-  render() {
-    return (
-      <div className="posts-container">
-        {this.showPosts()}
-      </div>
-    );
-  }
+```js
+{
+  variables: { title, content },
+  refetchQueries: [{ query: GET_POSTS }]
 }
-
 ```
 
-###Creating a component which provides form for adding new post
+The object with `variables` and `refetchQueries` properties is used by GraphQL to handle mutation queries.
 
-Теперь в папке `components` создаем файл `PostForm.js` со следующим кодом
+First, we just pass the values that must be stored in the database into the `variables` property. Once those values are
+stored to the database, we want the server to respond to the client with the created object. If you just send an
+`addPost` mutation query with post data, you won’t see a new post shown in the list because you’ll have to manually
+refresh the page. This is when `refetchQueries` is helpful. `refetchQueries` is an array of query objects that we want
+to resend. And we want to resend only one query &mdash; `GET_POSTS`.
+
+Finally, let’s create a form to get post data.
+
+#### Creating a PostForm component
+
+Add the file `PostForm.js` with the following code into `post/components`:
 
 ```javascript
 import React, { Component } from 'react';
@@ -677,11 +1224,11 @@ export default class PostForm extends Component {
         <Form onSubmit={(event) => this.submitForm(event)}>
           <FormGroup>
             <Label for="postTitle">Post Title</Label>
-            <Input type="text" name="title" id="postTitle" placeholder="Add a title" />
+            <Input type="text" name="title" id="postTitle" placeholder="Title" />
           </FormGroup>
           <FormGroup>
             <Label for="postContent">Post Content</Label>
-            <Input type="textarea" name="content" id="postContent" placeholder="Describe your post" />
+            <Input type="textarea" name="content" id="postContent" placeholder="Content" />
           </FormGroup>
           <Button className="submit-button">Submit new post</Button>
         </Form>
@@ -689,84 +1236,94 @@ export default class PostForm extends Component {
     )
   }
 }
-
 ```
 
-### Exporting new components
+`PostForm` is a typical React component. It has the `submitForm()` method to submit post data using the `addPost()`
+method (which it received as a prop from the `AddPost` provider component). The form layout is also typical: We use
+Reactstrap components `Form`, `FormGroup`, `Label`, `Input`, and `Button` to create the an HTML form with Bootstrap.
 
-После создания новых компонентов нам нужно их экспортировать для дальнейшего использования. Для этого в папке `components` создаем файл `index.js` в котором экспортируем наши компоненты.
+The React application is almost done. We suggest adding some styles and a script to run both server and client
+applications with one command.
 
-```javascript
-export { default as PostForm } from './PostForm';
-export { default as PostsList } from './PostsList';
-```
+___
 
-### Creating a container component for rendering posts
-Now that we can query the server and get posts, we need to add a container to render the retrieved posts. Create the `PostList` component under the `client/src/modules/posts/containers` directory with the following code:
-```javascript
-import React, { Component } from 'react'
-import { Container, Row, Col } from 'reactstrap';
+Let’s recap what you’ve created so far:
 
-import { withPosts } from '../providers';
-import { PostsList, PostForm } from '../components';
+* A modular React application
+* An instance of Apollo Client to handle GraphQL in React
+* A Post module consisting of Post List and Post Form
+* Providers and components for each module part
+* A mutation and query created with Apollo’s gql method
 
-import '../styles/styles.css';
+## The finishing touches
 
-/**
- * Wrap Posts component using withPosts provider
- * for getting posts list in the Posts component
- */
-@withPosts
-export default class PostsRoot extends Component {
-  render() {
-    const { posts, postsLoading } = this.props;
+You may want to run the React and Express applications simultaneously with just one command. That’s easy to achieve:
+install the package called `concurrently` that will let you run two scripts at the same time.
 
-    return (
-      <Container>
-        <h2 className="posts-title">Posts Module</h2>
-        <Row>
-          <Col>
-            <PostsList postsLoading={postsLoading} posts={posts} />
-          </Col>
-          <Col>
-            <PostForm />
-          </Col>
-        </Row>
-      </Container>
-    )
-  }
-}
+Add `concurrently` to the development dependencies in your `package.json`:
 
-```
-Next, we need to export our main component that’s located under the `containers` directory. We need to create the `index.js` file under `posts` and export the `Posts` component.
-```javascript
-export { default as Posts } from './containers';
-```
-
-Because we can have many modules, we also need to create the `index.js` file under `modules` to be able to export them:
-
-```javascript
-export { Posts } from './post';
-```
-
-## Final stitches
-
-You may not want to run the React and Express applications separately. We can use a dedicated package called `concurrently` that will run two scripts at the same time. Add `concurrently` to the development dependencies in your `package.json`:
 ```bash
 yarn add concurrently --dev
 ```
+
 Now, add another script into the `package.json` to run the client and server applications at the same time:
+
 ```json
 {
-    "scripts": {
+  "scripts": {
     "server": "nodemon ./server/server.js",
     "client": "webpack-dev-server --mode development --open",
-    "dev": "concurrently \"npm run client\" \"npm run server\""
-      }
+    "dev": "concurrently \"yarn client\" \"yarn server\""
+  }
 }
 ```
-Our Apollo, React, Express application is ready and you can run it with the following command:
+
+Your React, Express, and Apollo application is ready and you can run it with the following command:
+
 ```bash
 yarn dev
 ```
-The server and client applications will run simultaneously, and you can try out the built functionality.
+
+To make the client application look better, add the following code to the `client/src/modules/post/styles/styles.css`
+file:
+
+```css
+.container {
+  margin-top: 25px;
+  padding: 25px 15px;
+  background-color: #f5f7f9;
+}
+
+.card-body {
+  margin-bottom: 20px;
+}
+
+.post-card {
+  width: 350px;
+  margin: 7px auto;
+  cursor: pointer;
+  color: #880a8e;
+  box-shadow: 1px 2px 3px rgba(136,10,142,0.3);
+}
+
+.post-form {
+  padding: 25px 20px;
+  border: 1px solid rgba(0,0,0,0.125);
+  border-radius: 4px;
+  box-shadow: 1px 2px 3px rgba(136,10,142,0.3);
+}
+
+.post-card:hover, .post-form:hover {
+  box-shadow: 2px 3px 4px rgba(136,10,142,0.5);
+}
+
+.submit-button {
+  background-color: #880a8e !important;
+}
+```
+
+The application should be re-built and re-run, and you can open the browser with it. Add a post and see how it’s
+rendered to the list:
+
+${img (location: "",
+       alt:"Working React application with Apollo GraphQL")}

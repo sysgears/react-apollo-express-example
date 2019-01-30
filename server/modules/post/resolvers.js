@@ -1,16 +1,20 @@
 const Post = require('./models/post');
 
-// Provide resolver functions for your schema fields
+// Provide resolver functions for the GraphQL schema
 const resolvers = {
+  /**
+   * A GraphQL Query for posts that uses a Post model to query MongoDB
+   * and get all Post documents.
+   */
   Query: {
-    // Query which returns posts list
     posts: () => Post.find({})
   },
+  /**
+   * A GraphQL Mutation that provides functionality for adding post to
+   * the posts list and return post after successfully adding to list
+   */
   Mutation: {
-    /* Mutation which provides functionality for adding post to the posts list
-    * and return post after successfully adding to list
-    */
-    addPost: (_, post) => {
+    addPost: (parent, post) => {
       const newPost = new Post({ title: post.title, content: post.content });
       return newPost.save();
     }

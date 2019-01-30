@@ -1,2 +1,2 @@
-export { default as withPosts } from './PostsList';
+export { default as withPosts } from './PostList';
 export { default as withAddPost } from './AddPost';
