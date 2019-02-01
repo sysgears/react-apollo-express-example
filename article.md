@@ -8,8 +8,12 @@ these technologies, it’s best to have a clear understanding how such an applic
 In this tutorial, we show how to create a modular application with the MongoDB, Express, React, Node.js (MERN) stack
 that uses Apollo, a popular GraphQL implementation for JavaScript applications.
 
-But before we dive deep into the implementation details, we want to give a bird view on what this MERN application
-powered by Apollo will look like.
+You can have a look at the implemented application in this repository:
+
+* <a href="https://github.com/sergei-gilevich/react-apollo-express-example" target="_blank">A MERN application with Apollo GraphQL</a>
+
+Before we dive deep into the implementation details, we want to give a bird view on what this MERN application powered 
+by Apollo will look like.
 
 ## An overview of Apollo, React, and Express application
 
